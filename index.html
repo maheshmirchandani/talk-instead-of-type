@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A friendly guide to private, offline voice dictation on Mac and Windows: install it, set it up, and talk instead of type.">
+<title>Talk Instead of Type: Private Dictation on Mac and Windows</title>
+<style>
+  :root {
+    --ink: #1d2129; --muted: #5b6270; --line: #d8dbe2; --bg: #ffffff;
+    --side-bg: #f4f5f8; --accent: #0a5ad4; --accent-soft: #e8f0fe;
+    --warn-bg: #fdf3e4; --warn-line: #dd9327;
+    --tip-bg: #e9f6ec; --tip-line: #3f9d58;
+    --note-bg: #eef2f8; --note-line: #7c8db0;
+    --code-bg: #f5f6f8; --code-line: #e1e3e9;
+    --badge-mac: #3a3f4b; --badge-win: #0a66a8; --badge-fg: #ffffff;
+    --card-bg: #fafbfc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e6e8ee; --muted: #9aa1ad; --line: #363b46; --bg: #16181d;
+      --side-bg: #1d2027; --accent: #6fa3ef; --accent-soft: #24304a;
+      --warn-bg: #33270f; --warn-line: #c98f2d;
+      --tip-bg: #14291a; --tip-line: #4a9e63;
+      --note-bg: #1d2531; --note-line: #6a7c9e;
+      --code-bg: #1e2128; --code-line: #333845;
+      --badge-mac: #b8bdc9; --badge-win: #5aa2d8; --badge-fg: #16181d;
+      --card-bg: #1a1d23;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---- Sidebar ---- */
+  #menuBtn {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 30;
+    background: var(--side-bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer;
+  }
+  nav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 20;
+    background: var(--side-bg); border-right: 1px solid var(--line);
+    padding: 22px 14px 40px; overflow-y: auto;
+  }
+  nav .navtitle { font-weight: 700; font-size: 15px; margin: 0 8px 2px; }
+  nav .stamp { font-size: 12px; color: var(--muted); margin: 0 8px 14px; }
+  .group { margin-bottom: 6px; }
+  .group > button {
+    width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+    color: var(--muted); font: 700 12px/1.4 inherit; letter-spacing: 0.6px;
+    text-transform: uppercase; padding: 8px 8px 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .group > button .chev { margin-left: auto; transition: transform 0.15s; font-size: 10px; }
+  .group.closed > button .chev { transform: rotate(-90deg); }
+  .group.closed ul { display: none; }
+  .plat {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    border-radius: 4px; padding: 1px 6px; color: var(--badge-fg);
+  }
+  .plat.mac { background: var(--badge-mac); }
+  .plat.win { background: var(--badge-win); }
+  nav ul { list-style: none; margin: 0; padding: 0; }
+  nav li a {
+    display: block; padding: 5px 10px; border-radius: 6px;
+    color: var(--ink); font-size: 14px; border-left: 3px solid transparent;
+  }
+  nav li a:hover { background: var(--accent-soft); text-decoration: none; }
+  nav li a.active { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+
+  main { margin-left: 280px; padding: 42px 48px 80px; max-width: 850px; }
+
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 23px; margin: 46px 0 10px; padding-top: 12px; border-top: 1px solid var(--line);
+       display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  h3 { font-size: 18px; margin: 26px 0 8px; }
+  p { margin: 10px 0; }
+  ul li, ol li { margin: 5px 0; }
+
+  ol.steps { counter-reset: step; list-style: none; margin: 14px 0; padding: 0; }
+  ol.steps > li { counter-increment: step; margin: 14px 0; padding-left: 44px; position: relative; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 1px;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps .do { font-weight: 700; display: block; }
+  ol.steps .why { color: var(--muted); font-size: 14.5px; display: block; margin-top: 2px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--code-line); border-radius: 8px;
+        padding: 12px 14px; overflow-x: auto; font-size: 13.5px; line-height: 1.5; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  p code, li code, td code, .do code, .why code {
+    background: var(--code-bg); border: 1px solid var(--code-line);
+    border-radius: 4px; padding: 1px 5px; font-size: 13px; white-space: nowrap;
+  }
+  kbd { font-family: inherit; font-size: 13px; border: 1px solid var(--line);
+        border-bottom-width: 2px; border-radius: 5px; padding: 1px 7px; background: var(--side-bg); }
+
+  .callout { border-left: 4px solid; border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .callout p { margin: 6px 0; }
+  .warn { background: var(--warn-bg); border-color: var(--warn-line); }
+  .tip  { background: var(--tip-bg);  border-color: var(--tip-line); }
+  .note { background: var(--note-bg); border-color: var(--note-line); }
+  .callout .label { font-weight: 700; font-size: 12.5px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .shot { border: 2px dashed var(--line); border-radius: 8px; padding: 16px;
+          color: var(--muted); font-size: 14px; text-align: center; margin: 14px 0; background: var(--card-bg); }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--side-bg); }
+
+  .decision { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .decision .card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--card-bg); }
+  .decision h4 { margin: 0 0 6px; font-size: 16px; }
+  @media (max-width: 700px) { .decision { grid-template-columns: 1fr; } }
+
+  .qcard { border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin: 16px 0; background: var(--card-bg); }
+  .qcard h3 { margin-top: 0; }
+
+  footer { margin-left: 280px; padding: 24px 48px 60px; max-width: 850px;
+           color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
+  @media (max-width: 920px) {
+    #menuBtn { display: block; }
+    nav { transform: translateX(-100%); transition: transform 0.2s; width: 280px; }
+    nav.open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,0.35); }
+    main, footer { margin-left: 0; padding: 60px 22px 60px; }
+  }
+  @media print {
+    nav, #menuBtn { display: none; }
+    main, footer { margin: 0; padding: 0; max-width: none; }
+    h2 { break-before: page; border-top: none; }
+    h1 + .meta + * , h2:first-of-type { break-before: auto; }
+    pre, .callout, table, .shot, .qcard, .decision .card { break-inside: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+
+<button id="menuBtn" aria-label="Menu">&#9776;</button>
+
+<nav id="sidebar">
+  <p class="navtitle">Talk Instead of Type</p>
+  <p class="stamp">v2 &middot; Last verified: Wed, 17 Sep 2026</p>
+
+  <div class="group">
+    <button>Getting started <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#start">1. Start here</a></li>
+      <li><a href="#before">2. Before you install</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button><span class="plat mac">macOS</span> Mac <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#mac-voiceink">3. VoiceInk on Mac</a></li>
+      <li><a href="#mac-handy">4. Handy on Mac (free)</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button><span class="plat win">Windows</span> Windows <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#win-handy">5. Handy on Windows</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button>Everyone <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#test">6. Test it</a></li>
+      <li><a href="#using">7. Using it well</a></li>
+      <li><a href="#extras">8. Optional extras</a></li>
+      <li><a href="#trouble">9. Troubleshooting</a></li>
+      <li><a href="#updating">10. Updating</a></li>
+      <li><a href="#uninstall">11. Uninstalling</a></li>
+      <li><a href="#faq">12. FAQ</a></li>
+      <li><a href="#glossary">13. Glossary</a></li>
+      <li><a href="#appendix">14. Quick reference</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button>Advanced <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#build-yourself"><span class="plat mac">macOS</span> 15. Build it yourself</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+
+<h1>Talk Instead of Type</h1>
+<p class="meta">Private voice dictation on Mac and Windows &middot; Version 2 &middot; Last updated: Wed, 17 Sep 2026<br>
+Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.6 (Windows and Mac)</p>
+
+<h2 id="start">1. Start here</h2>
+<p>This guide sets you up with voice dictation that runs <em>entirely on your own computer</em>. You hold a key, speak, release the key, and your words appear as text wherever your cursor is: an email, a chat box, a document, a search bar. It works in every app, punctuates for you, and is dramatically faster than typing.</p>
+<p><strong>The 60-second demo, in words:</strong> imagine replying to an email. You click into the reply box, hold a key next to your thumb, and say "Thanks for sending this over. I have read the first two sections and they look good. Can we talk on Thursday afternoon?" You release the key. A moment later that exact sentence appears, capitals and question mark included. That is the whole trick, and it never gets old.</p>
+<p><strong>A clear word on privacy:</strong> both apps in this guide transcribe your speech on your own machine, using a small AI model downloaded once during setup. No audio ever leaves your computer. There is no account to create and no server listening. After the model has downloaded, dictation works with Wi-Fi switched off. This is genuinely different from most "free" dictation tools, which upload your voice to the cloud.</p>
+<p><strong>Who this is for:</strong> anyone comfortable installing an app and changing a setting. No technical background needed. The guide assumes you will dictate in English.</p>
+
+<h3>Which app for which computer?</h3>
+<div class="decision">
+  <div class="card">
+    <h4><span class="plat mac">macOS</span> VoiceInk</h4>
+    <p>The polished option for Apple Silicon Macs (M1 or later) on macOS 14.4 or newer. 7-day free trial, then a one-time licence from $29 (no subscription). Open source. Extras like per-app profiles and AI text clean-up.</p>
+    <p><a href="#mac-voiceink">Go to section 3 &rarr;</a> &middot; Comfortable in Terminal? It can also be <a href="#build-yourself">built from source for free</a>.</p>
+  </div>
+  <div class="card">
+    <h4><span class="plat win">Windows</span> <span class="plat mac">macOS</span> Handy</h4>
+    <p>Free and open source, no licence ever. The choice for all Windows PCs (10/11, Intel/AMD and ARM), and the free Mac alternative if your Mac is Intel, on an older macOS, or you simply do not want to pay.</p>
+    <p><a href="#win-handy">Windows: section 5 &rarr;</a> &middot; <a href="#mac-handy">Mac: section 4 &rarr;</a></p>
+  </div>
+</div>
+
+<h3>Compatibility checklist</h3>
+<table>
+  <tr><th></th><th>Check this</th><th>How</th></tr>
+  <tr><td><span class="plat mac">macOS</span> for VoiceInk</td><td>Apple Silicon chip (M1, M2, M3, M4...) and macOS 14.4 or later</td><td>Apple menu &rarr; About This Mac. "Chip: Apple M..." means Apple Silicon; "Processor: Intel" means use Handy instead.</td></tr>
+  <tr><td><span class="plat mac">macOS</span> for Handy</td><td>Apple Silicon or Intel</td><td>Same place. Pick the matching download later.</td></tr>
+  <tr><td><span class="plat win">Windows</span> for Handy</td><td>Windows 10 or 11, about 8 GB RAM, 2 GB free disk, any microphone. Works on Intel/AMD (x64) and ARM PCs (separate download).</td><td>Settings &rarr; System &rarr; About shows your Windows version and "System type" (x64 or ARM).</td></tr>
+</table>
+
+<h2 id="before">2. Before you install</h2>
+<h3>Your microphone matters more than the app</h3>
+<ul>
+  <li><strong>Built-in laptop mic:</strong> perfectly fine to start with. Modern laptop mics are decent at arm's length.</li>
+  <li><strong>Headset or earbuds with a mic:</strong> usually better, because the mic sits close to your mouth and ignores the room.</li>
+  <li><strong>Desk (USB) mic:</strong> best results. Place it 15 to 30 cm from your mouth, slightly off to the side so it does not catch breath puffs.</li>
+  <li>Whichever you use: close the window, turn off a noisy fan if you can, and speak at a normal conversational volume. You do not need to be loud.</li>
+</ul>
+<h3>Check the mic works before installing anything</h3>
+<ul>
+  <li><span class="plat mac">macOS</span> System Settings &rarr; Sound &rarr; Input. Choose your mic and watch the level meter bounce as you speak.</li>
+  <li><span class="plat win">Windows</span> Settings &rarr; System &rarr; Sound &rarr; Input. Choose your mic and watch the volume bar move as you speak.</li>
+</ul>
+<h3>What to expect</h3>
+<p>Total time: about 10 minutes, most of it a one-off model download of roughly 500 MB to 1 GB (the small AI that does the transcribing). Have your computer plugged in and on a reasonable connection for that part.</p>
+
+<h2 id="mac-voiceink"><span class="plat mac">macOS</span> 3. VoiceInk on Mac</h2>
+<p>Requirements: Apple Silicon Mac, macOS 14.4 or later. Version covered: 2.13.</p>
+
+<h3>3.1 Download and install</h3>
+<ol class="steps">
+  <li><span class="do">Download VoiceInk from <a href="https://tryvoiceink.com">tryvoiceink.com</a>.</span>
+      <span class="why">The big download button gets the latest version. (Homebrew users can instead run <code>brew install --cask voiceink</code> in Terminal and skip to step 3.)</span></li>
+  <li><span class="do">Open the downloaded file and drag the VoiceInk icon into the Applications folder shown next to it.</span>
+      <span class="why">That is the whole installation on a Mac: copying the app into Applications.</span></li>
+  <li><span class="do">Open VoiceInk from the Applications folder.</span>
+      <span class="why">First launch of a downloaded app can show a confirmation. VoiceInk is a notarised app, so normally macOS just asks a plain "are you sure you want to open it?" question: click <strong>Open</strong>. If you instead see "Apple could not verify..." wording, see the <a href="#trouble">troubleshooting section</a>; do not force anything you were not expecting.</span></li>
+</ol>
+
+<h3>3.2 Permissions, and why they are safe to grant</h3>
+<p>VoiceInk's setup assistant asks for two permissions. They sound scary; here is what they actually do:</p>
+<ul>
+  <li><strong>Microphone</strong>: obviously required, it is a dictation app. The audio is processed on your Mac and discarded.</li>
+  <li><strong>Accessibility</strong>: this is the permission that lets VoiceInk <em>type the text into other apps</em> for you. Without it, transcription works but nothing appears at your cursor. macOS gates this tightly precisely because it is powerful; granting it to a dictation app is exactly what it is for.</li>
+</ul>
+<ol class="steps">
+  <li><span class="do">Click the grant buttons in VoiceInk's setup and approve the system dialogs.</span>
+      <span class="why">If you miss one, the manual paths are: System Settings &rarr; Privacy &amp; Security &rarr; <strong>Microphone</strong> &rarr; switch VoiceInk on, and System Settings &rarr; Privacy &amp; Security &rarr; <strong>Accessibility</strong> &rarr; switch VoiceInk on.</span></li>
+  <li><span class="do">Skip "Screen Recording" unless you later want per-app profiles with website detection.</span>
+      <span class="why">It is optional and only used by the context-aware extras in <a href="#extras">section 8</a>.</span></li>
+  <li><span class="do">On the setup screen titled "Verify API Key", click <strong>Set It Up Later</strong>.</span>
+      <span class="why">That screen is for the optional cloud AI clean-up. You do not need any API key for dictation.</span></li>
+</ol>
+<div class="shot">[Screenshot: System Settings &rarr; Privacy &amp; Security &rarr; Accessibility with VoiceInk toggled on]</div>
+
+<h3>3.3 Microphone and model</h3>
+<ol class="steps">
+  <li><span class="do">In VoiceInk, open <strong>Audio</strong> in the sidebar and select your microphone.</span>
+      <span class="why">VoiceInk picks its own input, separate from the system default, so choose your best mic here.</span></li>
+  <li><span class="do">Open <strong>AI Models</strong> and download <strong>Parakeet TDT v3</strong> (about 500 MB).</span>
+      <span class="why">This is the recommended English model: extremely fast and accurate, and it runs on the Mac's Neural Engine. The download takes a few minutes; let it finish.</span></li>
+  <li><span class="do">Expect the very first dictation to pause a few extra seconds.</span>
+      <span class="why">macOS compiles the model once on first use. Every dictation after that is near-instant.</span></li>
+</ol>
+
+<h3>3.4 The hotkey</h3>
+<ol class="steps">
+  <li><span class="do">Find the recording shortcut in VoiceInk's settings (in current versions it lives inside your mode: <strong>Modes</strong> &rarr; your mode &rarr; <strong>Shortcut</strong>). The default in recent versions is hold <kbd>Left Control</kbd> (check what yours shows).</span>
+      <span class="why">Two ways to use it: <strong>hold</strong> the key while speaking and release to finish (recommended: the mic is never left open), or <strong>tap</strong> it to start hands-free and tap again to stop.</span></li>
+  <li><span class="do">If you prefer a different key, click the shortcut box first so it is actively listening, then press your choice. <kbd>Right Option</kbd> is excellent.</span>
+      <span class="why">Nothing else on a Mac uses Right Option, so it can never clash, and it sits under your thumb. The box must be in its "press a key now" state when you press, or nothing saves.</span></li>
+</ol>
+
+<h3>3.5 Trial, licence, launch at login</h3>
+<ul>
+  <li>VoiceInk is free for 7 days, then needs a one-time licence: $29 (1 Mac), $49 (2 Macs) or $69 (3 Macs) at the time of writing; verify the current price at <a href="https://tryvoiceink.com">tryvoiceink.com</a>. No subscription. There is also a 14-day money-back guarantee.</li>
+  <li>In VoiceInk's <strong>Settings</strong>, enable <strong>Launch at login</strong> so dictation is always ready.</li>
+</ul>
+<p>Now jump to <a href="#test">section 6</a> and test it.</p>
+
+<h2 id="mac-handy"><span class="plat mac">macOS</span> 4. Handy on Mac (the free alternative)</h2>
+<p>Choose Handy if your Mac is Intel, on macOS older than 14.4, or you want a completely free option. Version covered: 0.9.6.</p>
+<ol class="steps">
+  <li><span class="do">Check your chip: Apple menu &rarr; About This Mac.</span>
+      <span class="why">"Chip: Apple M..." means Apple Silicon; "Processor: Intel..." means Intel.</span></li>
+  <li><span class="do">Download the matching .dmg from <a href="https://handy.computer/download">handy.computer/download</a>: <strong>Apple Silicon</strong> or <strong>Intel</strong>.</span>
+      <span class="why">The wrong one will refuse to run; nothing breaks, just download the other.</span></li>
+  <li><span class="do">Open the .dmg and drag Handy to Applications, then open it from Applications.</span></li>
+  <li><span class="do">If macOS blocks the first launch with "Apple could not verify 'Handy' is free of malware", do not panic: open System Settings &rarr; Privacy &amp; Security, scroll down, and click <strong>Open Anyway</strong> next to the Handy message, then confirm.</span>
+      <span class="why">This warning means the app is not notarised through Apple's paid programme, not that it is harmful. Handy's code is public on GitHub. Only ever click past this warning for software you deliberately downloaded from its official site; see the <a href="#faq">FAQ</a>.</span></li>
+  <li><span class="do">Grant the Microphone and Accessibility permissions when asked.</span>
+      <span class="why">Same two permissions, same reasons as VoiceInk (section 3.2). Manual paths are identical, with Handy in place of VoiceInk.</span></li>
+  <li><span class="do">In Handy's settings, download the <strong>Parakeet V3</strong> model and select your microphone.</span></li>
+  <li><span class="do">Note the shortcut (at the time of writing the default is hold <kbd>Ctrl</kbd>+<kbd>Space</kbd>; check in the app) and change it in Settings if it clashes with anything you use.</span></li>
+</ol>
+<p>Then test it in <a href="#test">section 6</a>.</p>
+
+<h2 id="win-handy"><span class="plat win">Windows</span> 5. Handy on Windows</h2>
+<p>Requirements: Windows 10 or 11. Works on ordinary Intel/AMD PCs (x64) and ARM laptops (separate download). Version covered: 0.9.6. Handy is free and open source; there is nothing to buy.</p>
+
+<h3>5.1 Download and install</h3>
+<ol class="steps">
+  <li><span class="do">Go to <a href="https://handy.computer/download">handy.computer/download</a> and download the Windows <strong>Installer (.exe)</strong> for your system type: x64 for almost everyone, ARM if Settings &rarr; System &rarr; About says "ARM-based processor".</span>
+      <span class="why">Comfortable with the command line? <code>winget install cjpais.Handy</code> does the same job.</span></li>
+  <li><span class="do">Run the installer. If a blue box appears saying "Windows protected your PC" (Microsoft Defender SmartScreen), click <strong>More info</strong>, then <strong>Run anyway</strong>.</span>
+      <span class="why">SmartScreen flags apps from small publishers it has not seen often; it is a reputation check, not a virus alert. Handy's code is public on GitHub. Only click past this for software you deliberately downloaded from its official site.</span></li>
+  <li><span class="do">Follow the short install wizard and launch Handy. It lives in the system tray (the little icons near the clock).</span></li>
+</ol>
+<div class="shot">[Screenshot: SmartScreen dialog with "More info" and "Run anyway" highlighted]</div>
+
+<h3>5.2 Microphone permission and setup</h3>
+<ol class="steps">
+  <li><span class="do">Check Windows allows apps to use the microphone: Settings &rarr; Privacy &amp; security &rarr; <strong>Microphone</strong>. Switch on "Microphone access" and "Let desktop apps access your microphone".</span>
+      <span class="why">If this is off, Handy hears nothing and fails silently. It is the number one Windows gotcha.</span></li>
+  <li><span class="do">In Handy's settings (right-click the tray icon), choose your microphone.</span></li>
+  <li><span class="do">Download the <strong>Parakeet V3</strong> model when Handy offers it.</span>
+      <span class="why">Parakeet V3 runs on the CPU, needs no special graphics card, and auto-detects language. It is the right default. (Whisper models are also available and can use a GPU; see <a href="#extras">section 8</a>.)</span></li>
+</ol>
+
+<h3>5.3 The shortcut</h3>
+<ol class="steps">
+  <li><span class="do">Learn the default: hold <kbd>Ctrl</kbd>+<kbd>Space</kbd>, speak, release (verify the default in the app's settings; this was correct at the time of writing).</span>
+      <span class="why">Handy supports both hold-to-talk and a toggle mode; hold-to-talk is the habit to build, because the mic is only live while your finger says so.</span></li>
+  <li><span class="do">If Ctrl+Space clashes with an app you use (some IDEs and IMEs use it), change the binding in Handy's settings.</span></li>
+  <li><span class="do">Enable "start with Windows" in Handy's settings if offered (check in the app), so it is always ready.</span></li>
+</ol>
+
+<h2 id="test">6. Test it</h2>
+<p>Same three-step test on both platforms, easiest first:</p>
+<ol class="steps">
+  <li><span class="do">Open Notes (Mac) or Notepad (Windows), click into it, hold your dictation key and read this aloud, naturally, pauses and all:</span>
+      <span class="why">"Hello, this is my first dictation test. Does the punctuation appear on its own? Let us see. One, two, three."</span></li>
+  <li><span class="do">Release the key and wait a moment.</span>
+      <span class="why"><strong>Success looks like:</strong> your sentence appears at the cursor with capitals, commas and the question mark added automatically, no typing from you. The very first run can take several extra seconds (one-off model warm-up).</span></li>
+  <li><span class="do">Repeat once in a browser text box (a search bar is fine), and once in a chat app (WhatsApp, Slack, anything).</span>
+      <span class="why">Different apps receive text in different ways; these three cover them all. All three working means everything works.</span></li>
+</ol>
+<div class="callout warn"><span class="label">If nothing appears</span>
+<p>The transcription almost certainly worked and the <em>typing-out</em> failed, which means the Accessibility permission (Mac) or microphone privacy setting (Windows) is not right. Go straight to <a href="#trouble">troubleshooting</a>, first entry.</p></div>
+
+<h2 id="using">7. Using it well</h2>
+<h3>How to speak</h3>
+<ul>
+  <li>Talk at a natural pace, like on the phone. Do not slow down or over-enunciate; the model is trained on normal speech and exaggerated diction actually hurts.</li>
+  <li>Think in phrases. A short pause before releasing the key gives the model your full sentence.</li>
+  <li>Do not say "comma" or "full stop". Punctuation and capitals are added automatically. What the model will <em>not</em> do: line breaks, bullet points, formatting. Dictate a paragraph, format by hand.</li>
+</ul>
+<h3>Everyday mechanics</h3>
+<ul>
+  <li><strong>Cancelling mid-recording:</strong> press <kbd>Esc</kbd> while the little recorder is showing (VoiceInk; for Handy check its settings for the cancel key).</li>
+  <li><strong>History:</strong> both apps keep past transcriptions in the app (VoiceInk: History in the sidebar). If text ever fails to appear, your words are recoverable there.</li>
+  <li><strong>Names and jargon:</strong> both apps have a custom dictionary. Add people's names, company names and technical terms the model gets wrong. Real example: "Claude" kept coming out as "Cloud" until it went into the dictionary (VoiceInk: <strong>Dictionary</strong> in the sidebar; Handy: custom words in settings).</li>
+</ul>
+<h3>Three workflows to try (both platforms)</h3>
+<ol class="steps">
+  <li><span class="do">Talking to an AI assistant (Claude, ChatGPT).</span>
+      <span class="why">Dictation shines here: prompts are conversational by nature, and speaking a long, detailed prompt takes a tenth of the typing time.</span></li>
+  <li><span class="do">Replying on WhatsApp Web or email.</span>
+      <span class="why">Click into the reply box, hold, talk, release, send. Short messages become two-second tasks.</span></li>
+  <li><span class="do">Drafting a document.</span>
+      <span class="why">Dictate the messy first draft straight into the page, then edit by keyboard. Getting words down is what dictation is best at; polishing stays manual.</span></li>
+</ol>
+
+<h2 id="extras">8. Optional extras (skip freely)</h2>
+<p>Nothing in this section is needed for great dictation. Come back later if curious.</p>
+
+<h3><span class="plat mac">macOS</span> 8.1 AI clean-up of your dictation, fully local with Ollama</h3>
+<p>VoiceInk can pass each transcript through a small language model that strips filler words and tidies punctuation before the text is typed out. The difference is real. Spoken: <em>"So um basically I think we should uh move the meeting to Thursday because like the report isn't ready yet you know"</em>. Typed out after clean-up: <em>"I think we should move the meeting to Thursday because the report isn't ready yet."</em></p>
+<p>It stays fully private by using <strong>Ollama</strong>, a free app that runs language models locally. (VoiceInk can alternatively use a cloud AI with an API key; that option sends your transcribed <em>text</em> to the provider, never audio. This guide sticks to local.)</p>
+<div class="callout note"><span class="label">Is your Mac up to it?</span>
+<p>Comfortable with 16 GB of memory or more. The recommended model occupies about 10 GB of disk and runs happily on any Apple Silicon Mac with 16 GB. On an 8 GB Mac, skip this section or try a smaller model (see below); plain dictation stays perfect either way.</p></div>
+<ol class="steps">
+  <li><span class="do">Install Ollama from <a href="https://ollama.com">ollama.com</a> (or <code>brew install --cask ollama</code>) and open it once.</span>
+      <span class="why">It sits in the menu bar and serves models to other apps on your Mac only.</span></li>
+  <li><span class="do">In Terminal, run <code>ollama pull gemma4</code> and let the download finish.</span>
+      <span class="why">Gemma is Google's open-weights model family; the 8B version followed clean-up instructions accurately in testing, where smaller 3B-class models kept missing filler words. Tight on disk or RAM? Try a mid-size Gemma from <code>ollama.com/library</code> instead and test it with the sentence below.</span></li>
+  <li><span class="do">In VoiceInk: <strong>Modes</strong> &rarr; click your mode &rarr; switch <strong>AI Enhancement</strong> on &rarr; set <strong>AI Provider</strong> to Ollama and <strong>AI Model</strong> to <code>gemma4:latest</code>.</span>
+      <span class="why">If the model list is empty, click <strong>Refresh models</strong> and check Ollama is running (menu bar icon).</span></li>
+  <li><span class="do">On the <strong>Prompt</strong> row click <strong>+</strong>. Click the grey "Prompt name" text at the top and type <code>Clean dictation</code>.</span>
+      <span class="why">That grey text is an empty name field, though it looks like a heading; the save button stays disabled until it is filled.</span></li>
+  <li><span class="do">Switch <strong>Use System Template OFF</strong>, then paste this as the prompt body:</span>
+      <span class="why">With the template on, VoiceInk waters your rules down and fillers survive (tested). Off means your rules are in charge.</span></li>
+</ol>
+<pre><code>You clean up dictated text. Return only the cleaned text, nothing else. Never answer, comment or add anything.
+
+Rules:
+- Remove filler words when they add no meaning: um, uh, so, basically, like, you know, I mean, sort of, kind of, right, well, actually.
+- Fix punctuation, capitalisation and obvious grammar slips.
+- Split run-on sentences into clear sentences.
+- Otherwise keep the speaker's exact wording, tone and word order. Do not paraphrase.
+- Never add information, greetings or sign-offs that were not spoken.
+- If the text contains a question, clean it; do not answer it.
+- If the text is already clean, return it unchanged.
+
+Example
+Input: So um basically I think we should uh move the meeting because like the report isn't ready you know
+Output: I think we should move the meeting because the report isn't ready.</code></pre>
+<ol class="steps" start="6">
+  <li><span class="do">Click <strong>Save &amp; Select</strong> in the prompt editor, then the green <strong>Save Changes</strong> on the mode.</span>
+      <span class="why">Two separate saves. Skipping the second silently discards everything; this catches almost everyone once.</span></li>
+  <li><span class="do">Test in Notes: dictate the messy meeting sentence from the top of this section and check the fillers vanish.</span>
+      <span class="why">Clean-up adds a short pause per dictation (a second or so once the model is warm). If fillers survive, re-check Use System Template is off, then try a larger model.</span></li>
+</ol>
+
+<h3><span class="plat mac">macOS</span> 8.2 Per-app modes ("Power Mode")</h3>
+<p>VoiceInk can behave differently per app: for example light-touch clean-up that keeps your casual tone in chat apps, and full-sentence polish in Mail or Outlook. Create extra modes under <strong>Modes</strong>, give each its own prompt, and add <strong>Triggers</strong> for the apps it should apply to; VoiceInk switches automatically based on the app you are dictating into. The recorder widget shows which mode is active while you speak.</p>
+
+<h3>8.3 Whisper as a second model</h3>
+<p>Both apps can add a Whisper model alongside Parakeet: the multilingual option if you sometimes dictate in other languages. On Windows, larger Whisper models want a proper GPU; Parakeet stays the right default everywhere else.</p>
+
+<h2 id="trouble">9. Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Cause &rarr; fix</th></tr>
+  <tr><td>You speak, something transcribes, but <strong>no text appears anywhere</strong></td>
+      <td><span class="plat mac">macOS</span> Accessibility permission missing, or granted to an older copy of the app. System Settings &rarr; Privacy &amp; Security &rarr; Accessibility: remove the app's stale entry with the &minus; button, re-add with +, switch it on, restart the app. <span class="plat win">Windows</span> Check Settings &rarr; Privacy &amp; security &rarr; Microphone first; then try running Handy once as administrator to rule out focus issues. Your words are in the app's History either way.</td></tr>
+  <tr><td><strong>Wrong microphone</strong> picked up (echoey room sound, or silence)</td>
+      <td>The app selects its own mic, separate from the system default. Pick the right one inside the app's audio settings. Bluetooth headsets that just connected can take a moment to switch profiles.</td></tr>
+  <tr><td><strong>Model download stuck</strong></td>
+      <td>Quit and reopen the app and retry; check the connection. Downloads resume or restart cleanly. If repeatedly stuck, delete the partial model in the app's model manager and download again.</td></tr>
+  <tr><td><strong>Hotkey does nothing</strong> or triggers something else</td>
+      <td>Another app owns that key combination. Change the dictation shortcut to something unclaimed (Mac: Right Option; Windows: try Ctrl+Alt+Space). When rebinding, click the shortcut box first so it is actively listening.</td></tr>
+  <tr><td><strong>Transcription is slow</strong></td>
+      <td>First run after install or reboot: the model is loading, wait once. Always slow: close memory-hungry apps, and on Windows make sure you are on Parakeet (CPU-friendly) rather than a large Whisper model without a GPU.</td></tr>
+  <tr><td><strong>App seems to have vanished</strong> (no window)</td>
+      <td>These apps live in the menu bar (Mac, top right) or system tray (Windows, near the clock, possibly behind the ^ overflow arrow). Click the little icon.</td></tr>
+  <tr><td><strong>Gatekeeper or SmartScreen blocked the install</strong></td>
+      <td>Mac: System Settings &rarr; Privacy &amp; Security &rarr; scroll down &rarr; <strong>Open Anyway</strong>. Windows: <strong>More info &rarr; Run anyway</strong> on the SmartScreen box. Only do this for apps you downloaded from the official sites in this guide.</td></tr>
+  <tr><td><span class="plat mac">macOS</span> <strong>"VoiceInk is damaged and can't be opened"</strong></td>
+      <td>A corrupted download or an over-eager quarantine flag. Delete the app, re-download from the official site, reinstall. If it persists on a fresh download, run <code>xattr -cr /Applications/VoiceInk.app</code> in Terminal (same for Handy with its path).</td></tr>
+  <tr><td><strong>Permissions reset after an update</strong></td>
+      <td>macOS ties permissions to the app's signature, and some updates look like a new app. Re-grant in System Settings &rarr; Privacy &amp; Security (remove the old entry first if the toggle seems on but does nothing).</td></tr>
+</table>
+
+<h2 id="updating">10. Updating</h2>
+<ul>
+  <li><span class="plat mac">macOS</span> <strong>VoiceInk</strong> checks for updates itself and offers them in-app (Sparkle updater). Accept, it swaps itself over, done. Settings and licence survive.</li>
+  <li><strong>Handy</strong> updates in-app (it will offer new versions), and you can always install a newer version straight over the old one from <a href="https://handy.computer/download">handy.computer/download</a>. Settings and models survive.</li>
+  <li>After any update, do one quick test dictation. If text stops appearing, it is the permissions-reset case in <a href="#trouble">troubleshooting</a>.</li>
+</ul>
+
+<h2 id="uninstall">11. Uninstalling</h2>
+<h3><span class="plat mac">macOS</span> VoiceInk</h3>
+<ol class="steps">
+  <li><span class="do">Quit VoiceInk (menu bar icon), then delete <code>/Applications/VoiceInk.app</code>.</span></li>
+  <li><span class="do">Delete its data folders:</span>
+      <span class="why"><code>~/Library/Application Support/com.prakashjoshipax.VoiceInk</code> (settings, history) and <code>~/Library/Caches/com.prakashjoshipax.VoiceInk</code> if present. In Finder: Go &rarr; Go to Folder, paste the path.</span></li>
+  <li><span class="do">Delete the model folder <code>~/Library/Application Support/FluidAudio</code>.</span>
+      <span class="why">This is the Parakeet model, about half a gigabyte.</span></li>
+  <li><span class="do">Remove the stale permission entries: System Settings &rarr; Privacy &amp; Security &rarr; Microphone and Accessibility &rarr; select VoiceInk &rarr; the &minus; button.</span></li>
+</ol>
+<h3><span class="plat mac">macOS</span> Handy</h3>
+<p>Same pattern: quit from the menu bar, delete <code>/Applications/Handy.app</code>, delete <code>~/Library/Application Support/com.pais.handy</code> (its <code>models</code> subfolder is the big part), and remove its Microphone and Accessibility entries.</p>
+<h3><span class="plat win">Windows</span> Handy</h3>
+<ol class="steps">
+  <li><span class="do">Quit Handy from the system tray (right-click &rarr; Quit).</span></li>
+  <li><span class="do">Settings &rarr; Apps &rarr; Installed apps &rarr; Handy &rarr; <strong>Uninstall</strong>.</span></li>
+  <li><span class="do">Delete the leftover data folder: press <kbd>Win</kbd>+<kbd>R</kbd>, type <code>%APPDATA%</code>, Enter, and delete the <code>com.pais.handy</code> folder (also check <code>%LOCALAPPDATA%</code> for one).</span>
+      <span class="why">The <code>models</code> folder inside is the bulk of it.</span></li>
+</ol>
+<p>Space freed: roughly 1 to 2 GB with Parakeet only; several GB more if you added Whisper models.</p>
+
+<h2 id="faq">12. FAQ</h2>
+<p><strong>Is it really private?</strong> Yes. Transcription happens on your computer with a locally stored model. Both apps are open source, so this claim is publicly checkable in the code. The one exception is opt-in: VoiceInk's optional <em>cloud</em> clean-up sends transcribed text (never audio) to the provider you configure.</p>
+<p><strong>Does it work offline?</strong> Yes, fully, once the model has downloaded. Flight mode is fine.</p>
+<p><strong>Does it understand accents?</strong> Very well. Parakeet and Whisper are trained on hugely varied speech. Give it a few days and add your recurring names to the dictionary; accuracy settles above what you would guess.</p>
+<p><strong>Other languages?</strong> This guide assumes English. Parakeet V3 covers about 25 European languages; for broader coverage add a Whisper model (see section 8).</p>
+<p><strong>Does it type into any app?</strong> Effectively yes: anywhere a cursor accepts text. A handful of odd apps and secure fields (password boxes) refuse synthetic typing; the History view always has your text to paste manually.</p>
+<p><strong>Why not the built-in macOS/Windows dictation?</strong> The built-ins are okay for a sentence but weaker on accuracy and punctuation, historically cloud-linked for the best results, and awkward across apps. Local Parakeet-class models are simply a generation better, and everything stays on the machine.</p>
+<p><strong>Is it safe to click past the security warning?</strong> When, and only when, you downloaded the installer yourself from the official site named in this guide. The warnings mean "unknown publisher", not "malware found". Never click past that warning for something that arrived by email or a random link.</p>
+<p><strong>What does the VoiceInk licence cover?</strong> A one-time payment for the number of Macs in the tier ($29 one, $49 two, $69 three at the time of writing), all future updates included, 14-day money-back guarantee. Handy has no licence; it is free. There is also a free do-it-yourself route to VoiceInk for the technically inclined: <a href="#build-yourself">section 15</a>.</p>
+
+<h2 id="glossary">13. Glossary</h2>
+<table>
+  <tr><td><strong>Model</strong></td><td>The AI file that turns audio into text. Downloaded once, runs locally. Bigger is not automatically better; Parakeet is small and excellent.</td></tr>
+  <tr><td><strong>Parakeet</strong></td><td>A fast, accurate speech model (from NVIDIA's research line) that runs well on ordinary CPUs and Apple chips. The default choice in this guide.</td></tr>
+  <tr><td><strong>Whisper</strong></td><td>OpenAI's family of speech models. Strong multilingual coverage; the larger ones want a GPU.</td></tr>
+  <tr><td><strong>Hotkey / shortcut</strong></td><td>The key you hold or tap to record.</td></tr>
+  <tr><td><strong>Push-to-talk vs toggle</strong></td><td>Hold-to-record (release to finish) versus tap-to-start, tap-to-stop. Prefer push-to-talk: the mic is live only while you hold.</td></tr>
+  <tr><td><strong>Accessibility permission</strong></td><td>macOS permission that lets an app type text into other apps on your behalf. Required for dictation to insert text.</td></tr>
+  <tr><td><strong>Gatekeeper</strong></td><td>macOS's check on downloaded apps. Unknown-publisher apps need a one-time "Open Anyway" in System Settings.</td></tr>
+  <tr><td><strong>SmartScreen</strong></td><td>Windows's equivalent reputation check: the blue "Windows protected your PC" box, bypassed per-app with More info &rarr; Run anyway.</td></tr>
+</table>
+
+<h2 id="appendix">14. Quick reference</h2>
+<div class="qcard">
+  <h3><span class="plat mac">macOS</span> VoiceInk card</h3>
+  <table>
+    <tr><td>Download</td><td><a href="https://tryvoiceink.com">tryvoiceink.com</a> (or <code>brew install --cask voiceink</code>)</td></tr>
+    <tr><td>Cost</td><td>7-day trial, then $29 / $49 / $69 one-time (verify current price)</td></tr>
+    <tr><td>Hotkey</td><td>Hold <kbd>Left Control</kbd> by default (check in app); rebind under Modes &rarr; Shortcut</td></tr>
+    <tr><td>Permissions</td><td>Microphone + Accessibility (System Settings &rarr; Privacy &amp; Security)</td></tr>
+    <tr><td>Model</td><td>Parakeet TDT v3, from the AI Models tab (~500 MB)</td></tr>
+    <tr><td>Uninstall</td><td>App + <code>~/Library/Application Support/com.prakashjoshipax.VoiceInk</code> + <code>~/Library/Application Support/FluidAudio</code> + permission entries</td></tr>
+  </table>
+</div>
+<div class="qcard">
+  <h3><span class="plat win">Windows</span> <span class="plat mac">macOS</span> Handy card</h3>
+  <table>
+    <tr><td>Download</td><td><a href="https://handy.computer/download">handy.computer/download</a> (Windows x64/ARM .exe; Mac Apple Silicon/Intel .dmg; or <code>winget install cjpais.Handy</code>)</td></tr>
+    <tr><td>Cost</td><td>Free, open source</td></tr>
+    <tr><td>Hotkey</td><td>Hold <kbd>Ctrl</kbd>+<kbd>Space</kbd> by default (check in app); rebind in Settings</td></tr>
+    <tr><td>Permissions</td><td>Windows: Settings &rarr; Privacy &amp; security &rarr; Microphone. Mac: Microphone + Accessibility.</td></tr>
+    <tr><td>Model</td><td>Parakeet V3 (CPU-friendly), offered on first run</td></tr>
+    <tr><td>Uninstall</td><td>Windows: Settings &rarr; Apps, then delete <code>%APPDATA%\com.pais.handy</code>. Mac: app + <code>~/Library/Application Support/com.pais.handy</code>.</td></tr>
+  </table>
+</div>
+<p>Written Wed, 17 Sep 2026 against VoiceInk 2.13 and Handy 0.9.6. Details marked "check in the app" may have moved in later versions.</p>
+
+<h2 id="build-yourself"><span class="plat mac">macOS</span> 15. For tinkerers: build VoiceInk yourself, free</h2>
+<p>VoiceInk's source code is public under an open-source licence (GPLv3), and building it yourself is free and entirely legitimate: the developer publishes the instructions. This is the only route that is both free <em>and</em> VoiceInk. It is genuinely a developer-tools exercise, so it lives here at the back rather than in the main flow.</p>
+<p><strong>Is it for you?</strong> Only if you are comfortable typing commands in Terminal and can spare the setup: Xcode (Apple's free developer app, a very large download of tens of gigabytes), about 5 GB of working disk on top, and roughly 45 minutes the first time.</p>
+<p><strong>What you give up versus the paid build:</strong> no automatic updates (you re-run the build to update), no iCloud dictionary sync, no support, and first launch involves developer-style permission wrangling. Everything else in this guide works identically.</p>
+<p><strong>The shape of it</strong> (the door, not the full tour):</p>
+<pre><code># One-off preparation
+#   1. Install Xcode from the Mac App Store, open it once, accept the licence
+#   2. Install the Metal Toolchain component:
+xcodebuild -downloadComponent MetalToolchain
+
+# Get the source and build
+mkdir -p ~/Developer/voiceink-build &amp;&amp; cd ~/Developer/voiceink-build
+git clone https://github.com/Beingpax/VoiceInk.git
+cd VoiceInk
+make local
+# ~20 minutes later the app appears in ~/Downloads; drag it to Applications</code></pre>
+<div class="callout warn"><span class="label">One caveat to know upfront</span>
+<p>macOS ties the Accessibility permission to the app's signature, and home-built apps get a new signature on every rebuild, so after each update you re-grant Accessibility. There is a tidy fix (a one-off self-signed certificate), covered in the companion build guide below.</p></div>
+<p><strong>The full walkthrough</strong>, with every command, every error met along the way and its fix, the certificate trick, and an update script, lives in a companion document: <a href="VoiceInk-Build-and-Setup-Guide.html">VoiceInk: Build and Setup Guide</a> (published alongside this file; if the link does not resolve, ask me for it). The official upstream instructions are in <a href="https://github.com/Beingpax/VoiceInk/blob/main/BUILDING.md">BUILDING.md on GitHub</a>.</p>
+
+</main>
+
+<footer>
+<p><strong>About this guide.</strong> Put together by Mahesh, from setting this up on my own machines. If you get stuck anywhere, message me and mention which numbered step you are on; that makes it easy to help.</p>
+</footer>
+
+<script>
+(function () {
+  var sidebar = document.getElementById('sidebar');
+  var btn = document.getElementById('menuBtn');
+  btn.addEventListener('click', function () { sidebar.classList.toggle('open'); });
+
+  // Collapsible groups
+  document.querySelectorAll('.group > button').forEach(function (b) {
+    b.addEventListener('click', function () { b.parentElement.classList.toggle('closed'); });
+  });
+
+  // Close the mobile drawer after choosing a section
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav li a'));
+  links.forEach(function (a) {
+    a.addEventListener('click', function () { sidebar.classList.remove('open'); });
+  });
+
+  // Scrollspy: highlight the section currently in view
+  var map = {};
+  links.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  var current = null;
+  function setActive(id) {
+    if (current === id) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (map[id]) map[id].classList.add('active');
+  }
+  var headings = Object.keys(map).map(function (id) { return document.getElementById(id); });
+  function onScroll() {
+    var pos = window.scrollY + 90;
+    var active = headings[0] ? headings[0].id : null;
+    headings.forEach(function (h) { if (h.offsetTop <= pos) active = h.id; });
+    if (active) setActive(active);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Mahesh Mirchandani">
+<meta name="description" content="Build VoiceInk from source on macOS and set it up for fast, private English dictation with local AI cleanup.">
+<title>VoiceInk: Build and Setup Guide</title>
+<style>
+  :root {
+    --ink: #1c1e21; --muted: #5c616b; --line: #d9dce1; --bg: #ffffff;
+    --side-bg: #f4f5f7; --accent: #0a5ad4; --accent-soft: #e8f0fe;
+    --warn-bg: #fdf3e4; --warn-line: #e8a33d;
+    --tip-bg: #e9f6ec; --tip-line: #3f9d58;
+    --note-bg: #eef2f8; --note-line: #7c8db0;
+    --code-bg: #f6f7f9; --code-line: #e2e4e9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Layout: fixed left sidebar, scrolling content */
+  nav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 270px;
+    background: var(--side-bg); border-right: 1px solid var(--line);
+    padding: 24px 18px; overflow-y: auto;
+  }
+  nav h2 { font-size: 15px; margin: 0 0 4px; }
+  nav .stamp { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  nav ol { list-style: none; margin: 0; padding: 0; }
+  nav li { margin: 2px 0; }
+  nav a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--ink); font-size: 14px; }
+  nav a:hover { background: var(--accent-soft); text-decoration: none; }
+  nav .sub { padding-left: 18px; font-size: 13px; color: var(--muted); }
+  main { margin-left: 270px; padding: 40px 48px 80px; max-width: 860px; }
+
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 6px; }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 30px; }
+  h2 { font-size: 23px; margin: 44px 0 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  h3 { font-size: 18px; margin: 26px 0 8px; }
+  p { margin: 10px 0; }
+  ol.steps > li { margin: 8px 0; }
+  ul li { margin: 4px 0; }
+
+  pre {
+    background: var(--code-bg); border: 1px solid var(--code-line); border-radius: 8px;
+    padding: 12px 14px; overflow-x: auto; font-size: 13.5px; line-height: 1.5;
+  }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  p code, li code, td code {
+    background: var(--code-bg); border: 1px solid var(--code-line);
+    border-radius: 4px; padding: 1px 5px; font-size: 13.5px;
+  }
+  kbd {
+    font-family: inherit; font-size: 13px; border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 1px 7px; background: #fff;
+  }
+
+  .callout { border-left: 4px solid; border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .callout p { margin: 6px 0; }
+  .warn { background: var(--warn-bg); border-color: var(--warn-line); }
+  .tip  { background: var(--tip-bg);  border-color: var(--tip-line); }
+  .note { background: var(--note-bg); border-color: var(--note-line); }
+  .callout .label { font-weight: 700; font-size: 13px; letter-spacing: 0.4px; text-transform: uppercase; }
+
+  .shot {
+    border: 2px dashed var(--line); border-radius: 8px; padding: 18px;
+    color: var(--muted); font-size: 14px; text-align: center; margin: 14px 0; background: #fafbfc;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--side-bg); }
+
+  .prompt-block { white-space: pre-wrap; }
+
+  /* Print: hide sidebar, use full width, keep blocks intact */
+  @media print {
+    nav { display: none; }
+    main { margin: 0; padding: 0; max-width: none; }
+    pre, .callout, table, .shot { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    a { color: inherit; }
+  }
+  @media (max-width: 900px) {
+    nav { position: static; width: auto; border-right: none; border-bottom: 1px solid var(--line); }
+    main { margin-left: 0; padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <h2>VoiceInk Guide</h2>
+  <div class="stamp">v1.0 &middot; Wed, 17 Sep 2026</div>
+  <ol>
+    <li><a href="#overview">1. What VoiceInk is</a></li>
+    <li><a href="#requirements">2. Requirements</a></li>
+    <li><a href="#build">3. Building from source</a></li>
+    <li class="sub"><a href="#build-preflight">3.1 Preflight</a></li>
+    <li class="sub"><a href="#build-metal">3.2 Metal Toolchain</a></li>
+    <li class="sub"><a href="#build-clone">3.3 Get the source</a></li>
+    <li class="sub"><a href="#build-make">3.4 Build the app</a></li>
+    <li><a href="#signing">4. Signing and installing</a></li>
+    <li><a href="#firstrun">5. First-run setup</a></li>
+    <li><a href="#ollama">6. AI cleanup with Ollama</a></li>
+    <li><a href="#modes">7. Modes and dictionary</a></li>
+    <li><a href="#daily">8. Daily use</a></li>
+    <li><a href="#troubleshooting">9. Troubleshooting</a></li>
+    <li><a href="#updating">10. Updating and uninstalling</a></li>
+    <li><a href="#appendix">11. Appendix: versions</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<h1>VoiceInk: Build and Setup Guide</h1>
+<p class="meta">Version 1.0 &middot; Last updated: Wed, 17 Sep 2026 &middot; Author: Mahesh Mirchandani<br>
+From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 Max). Every command below was actually run; every error listed actually happened.</p>
+
+<div class="callout warn"><span class="label">macOS only</span>
+<p>VoiceInk is a native macOS application (Swift and CoreML). There is no Windows or Linux version, and none can be built from this source code. You need a Mac.</p>
+</div>
+
+<h2 id="overview">1. What VoiceInk is, and why build it yourself</h2>
+<p>VoiceInk is a dictation app for macOS. You hold a key, speak, release, and your words appear as text at the cursor in whatever app you are using. Transcription runs entirely on your Mac using local AI models, so nothing you say leaves the machine. An optional second stage passes the transcript through a local language model (via Ollama) to strip filler words and fix punctuation, still fully offline.</p>
+<p>The app is open source under the GPLv3 licence (<a href="https://github.com/Beingpax/VoiceInk">github.com/Beingpax/VoiceInk</a>). The developer sells a compiled version with a licence; building from source is free and entirely legal. What you give up by building it yourself:</p>
+<ul>
+  <li><strong>Automatic updates.</strong> The Sparkle updater is disabled in local builds. You update by rebuilding (a one-command script is provided in <a href="#updating">section 10</a>).</li>
+  <li><strong>iCloud dictionary sync.</strong> Your personal dictionary stays on one Mac.</li>
+  <li><strong>Support.</strong> No priority support or Discord access, and you are not funding further development. If you end up using VoiceInk daily, consider buying a licence anyway.</li>
+</ul>
+<p>Everything else works: local transcription, AI enhancement, per-app modes, personal dictionary, launch at login.</p>
+
+<h2 id="requirements">2. Requirements</h2>
+<table>
+  <tr><th>Item</th><th>Requirement</th></tr>
+  <tr><td>Mac</td><td>Apple Silicon strongly recommended (built and tested on an M1 Max). 16 GB RAM or more if you want AI enhancement via Ollama alongside transcription.</td></tr>
+  <tr><td>macOS</td><td>14.4 or later (this guide was produced on macOS 26.6.2).</td></tr>
+  <tr><td>Xcode</td><td>Full Xcode from the App Store, not just Command Line Tools. Free, but a large download. This guide used Xcode 26.6.</td></tr>
+  <tr><td>Metal Toolchain</td><td>A separate 700 MB Xcode component, required since Xcode 26. Installed in <a href="#build-metal">section 3.2</a>.</td></tr>
+  <tr><td>Homebrew, git, cmake</td><td>git ships with Xcode; cmake via <code>brew install cmake</code> if missing.</td></tr>
+  <tr><td>Ollama</td><td>Optional, for AI text cleanup. Free from <a href="https://ollama.com">ollama.com</a> or <code>brew install --cask ollama</code>.</td></tr>
+  <tr><td>Disk space</td><td>Roughly 5 GB for the build (dependencies 1.3 GB, build products 3.4 GB, app 150 MB) plus 0.5 GB for the transcription model, on top of Xcode itself. An Ollama model adds 2 to 10 GB depending on your choice.</td></tr>
+  <tr><td>Time</td><td>About 45 minutes end to end on an M1 Max with a fast connection, excluding the Xcode download.</td></tr>
+</table>
+
+<h2 id="build">3. Building from source</h2>
+
+<h3 id="build-preflight">3.1 Preflight checks</h3>
+<p>Install Xcode from the App Store first if you have not (search for "Xcode", install, open it once and accept the licence). Then confirm everything in Terminal:</p>
+<pre><code>sw_vers                 # ProductVersion must be 14.4 or later
+xcode-select -p         # must print /Applications/Xcode.app/Contents/Developer
+xcodebuild -version     # prints the Xcode version; errors here mean the licence is not accepted
+brew --version
+git --version
+cmake --version         # if missing: brew install cmake</code></pre>
+<p>If <code>xcode-select -p</code> prints a path ending in <code>CommandLineTools</code>, point it at the full Xcode:</p>
+<pre><code>sudo xcode-select -s /Applications/Xcode.app/Contents/Developer</code></pre>
+
+<h3 id="build-metal">3.2 Install the Metal Toolchain</h3>
+<p>Since Xcode 26, the Metal GPU shader compiler is a separate download, and VoiceInk's AI dependencies need it. Fresh Xcode installations do not have it, and without it the build fails late with <code>cannot execute tool 'metal' due to missing Metal Toolchain</code>. Install it up front (about 700 MB):</p>
+<pre><code>xcodebuild -downloadComponent MetalToolchain
+xcrun metal --version    # must now print a version instead of an error</code></pre>
+
+<h3 id="build-clone">3.3 Get the source</h3>
+<pre><code>mkdir -p ~/Developer/voiceink-build
+cd ~/Developer/voiceink-build
+git clone https://github.com/Beingpax/VoiceInk.git
+cd VoiceInk</code></pre>
+<div class="callout note"><span class="label">Note</span>
+<p>The build also creates <code>~/VoiceInk-Dependencies</code> (the speech engine, whisper.cpp, lives there; the Xcode project references that exact path) and copies the finished app to <code>~/Downloads</code>. Both are the project's own choices, not this guide's.</p></div>
+
+<h3 id="build-make">3.4 Build the app</h3>
+<p>One command does everything: it verifies your tools, clones and compiles whisper.cpp into an XCFramework (around 10 minutes, thousands of compiler lines, entirely normal), resolves about 28 Swift package dependencies, compiles VoiceInk in Release configuration, and copies <code>VoiceInk.app</code> to <code>~/Downloads</code>:</p>
+<pre><code>make local LOCAL_CODESIGN_IDENTITY=-</code></pre>
+<p>Expect 15 to 25 minutes in total on the first run. Success looks like this at the end:</p>
+<pre><code>** BUILD SUCCEEDED **
+Build complete! App saved to: ~/Downloads/VoiceInk.app</code></pre>
+<div class="callout warn"><span class="label">Check the real result</span>
+<p>If the output instead contains <code>** BUILD FAILED **</code>, find the first line containing <code>error:</code> further up and match it against <a href="#troubleshooting">section 9</a>. Do not judge by the last line alone.</p></div>
+
+<h2 id="signing">4. Signing and installing</h2>
+
+<h3>4.1 Why signing matters here</h3>
+<p>macOS ties the Accessibility permission (which VoiceInk needs to type text into other apps) to the app's code signature. The build above is "ad-hoc" signed: a signature derived from the binary itself, which therefore changes on every rebuild. With ad-hoc signing, <strong>every rebuild looks like a brand-new app to macOS and you must re-grant Accessibility each time</strong>. That is livable if you rarely update. The better option is a one-off self-signed certificate, which keeps the signature identity stable so permissions survive rebuilds.</p>
+
+<h3>4.2 Create a signing certificate (recommended, one-off)</h3>
+<p>The following creates a certificate named <code>VoiceInk Local</code>, valid ten years, imports it into your login keychain and trusts it for code signing only. macOS will show one password dialog for the trust change; enter your Mac password and click <strong>Update Settings</strong>.</p>
+<pre><code>WORK="$(mktemp -d)" &amp;&amp; cd "$WORK"
+
+cat &gt; codesign.cnf &lt;&lt; 'EOF'
+[req]
+distinguished_name = dn
+x509_extensions = codesign_ext
+prompt = no
+[dn]
+CN = VoiceInk Local
+[codesign_ext]
+keyUsage = critical,digitalSignature
+extendedKeyUsage = critical,codeSigning
+basicConstraints = critical,CA:FALSE
+EOF
+
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem \
+  -days 3650 -nodes -config codesign.cnf -extensions codesign_ext
+
+openssl pkcs12 -export -out cert.p12 -inkey key.pem -in cert.pem \
+  -passout pass:vlocal-import \
+  -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1
+
+security import cert.p12 -k ~/Library/Keychains/login.keychain-db \
+  -P vlocal-import -T /usr/bin/codesign -T /usr/bin/security
+
+security add-trusted-cert -p codeSign \
+  -k ~/Library/Keychains/login.keychain-db cert.pem
+
+security find-identity -v -p codesigning   # should list "VoiceInk Local"
+cd ~ &amp;&amp; rm -rf "$WORK"</code></pre>
+<div class="callout note"><span class="label">Why the odd openssl flags</span>
+<p>Homebrew's OpenSSL 3 writes modern PKCS#12 files that macOS cannot import (it fails with "MAC verification failed", a misleading message). The <code>-certpbe/-keypbe/-macalg</code> flags force the older format macOS accepts.</p></div>
+
+<h3>4.3 Re-sign and install</h3>
+<p>Xcode 26 refuses to sign with non-Apple certificates during the build (it silently falls back to ad-hoc, even when told otherwise), so the certificate is applied <em>after</em> the build:</p>
+<pre><code>codesign -f --deep --preserve-metadata=entitlements \
+  -s "VoiceInk Local" ~/Downloads/VoiceInk.app
+codesign --verify --deep --strict ~/Downloads/VoiceInk.app   # silence means success
+
+rm -rf /Applications/VoiceInk.app
+ditto ~/Downloads/VoiceInk.app /Applications/VoiceInk.app
+open -a VoiceInk</code></pre>
+<p>If you skipped the certificate, just run the last three lines. The app should launch and show its onboarding window.</p>
+
+<h2 id="firstrun">5. First-run setup</h2>
+
+<h3>5.1 Permissions</h3>
+<p>VoiceInk's onboarding asks for the permissions it needs. If you miss one, or macOS revokes one after a rebuild, the manual paths are:</p>
+<table>
+  <tr><th>Permission</th><th>Needed for</th><th>Where</th></tr>
+  <tr><td>Microphone</td><td>Recording your voice (required)</td><td>System Settings &rarr; Privacy &amp; Security &rarr; Microphone &rarr; enable VoiceInk</td></tr>
+  <tr><td>Accessibility</td><td>Typing the text into other apps (required)</td><td>System Settings &rarr; Privacy &amp; Security &rarr; Accessibility &rarr; enable VoiceInk (use <strong>+</strong> and pick it from /Applications if it is not listed)</td></tr>
+  <tr><td>Screen &amp; System Audio Recording</td><td>Optional: screen-context awareness and website-based mode switching</td><td>System Settings &rarr; Privacy &amp; Security &rarr; Screen &amp; System Audio Recording</td></tr>
+</table>
+<div class="shot">[Screenshot: System Settings &rarr; Privacy &amp; Security &rarr; Accessibility with VoiceInk enabled]</div>
+<div class="callout note"><span class="label">Onboarding's API key screen</span>
+<p>One onboarding screen says "Verify API Key" and lists only cloud AI providers. You do not need any API key. Click <strong>Set It Up Later</strong>; the local Ollama option appears in the app's full settings afterwards (<a href="#ollama">section 6</a>).</p></div>
+
+<h3>5.2 Microphone selection</h3>
+<p>VoiceInk picks its input device independently of the system default. In the app, open <strong>Audio</strong> in the sidebar and select your microphone (an external USB microphone beats the built-in one). Confirm macOS sees it first with:</p>
+<pre><code>system_profiler SPAudioDataType   # your mic should appear with input channels</code></pre>
+
+<h3>5.3 Download the transcription model</h3>
+<p>Open <strong>AI Models</strong> in the sidebar and download <strong>Parakeet TDT v3</strong> (about 470 MB). For English dictation it beats the larger Whisper models on all three counts that matter: accuracy (lower word error rate on public English benchmarks), speed (it runs on the Neural Engine via CoreML and returns text near-instantly), and honesty (it does not hallucinate text during silences, a known Whisper habit). Optionally also download <strong>Whisper large-v3-turbo</strong> (about 1.6 GB) if you want a multilingual fallback.</p>
+<div class="shot">[Screenshot: AI Models tab with Parakeet TDT v3 downloaded]</div>
+<div class="callout tip"><span class="label">First run</span>
+<p>The very first transcription takes a few extra seconds while macOS compiles the model. Every run after that is fast.</p></div>
+
+<h3>5.4 The dictation hotkey</h3>
+<p>The default hotkey is <kbd>Left Control</kbd>, used as hold-to-talk: hold it, speak, release, and the text appears. A quick tap instead starts hands-free recording (tap again to stop). To change the key: <strong>Modes</strong> &rarr; open your mode &rarr; <strong>Shortcut</strong> &rarr; <strong>Record</strong>, then press the key you want. Click the recorder field first so it is actively listening, otherwise the key press does not register. A right-hand modifier such as <kbd>Right Option</kbd> is a good alternative because nothing else on macOS uses it.</p>
+<p>Set <strong>Language</strong> to <strong>English</strong> in the mode's Transcription section (rather than Auto-detect) if you dictate only in English.</p>
+
+<h3>5.5 Launch at login</h3>
+<p>In VoiceInk's <strong>Settings</strong>, enable <strong>Launch at login</strong>, so dictation is always one key-hold away.</p>
+
+<h3>5.6 Test it</h3>
+<p>Open TextEdit, click into the document, hold the hotkey and say a sentence. The exact words should appear at the cursor. Repeat once in a browser text field. If nothing appears, the Accessibility permission is the usual culprit (<a href="#troubleshooting">section 9</a>).</p>
+
+<h2 id="ollama">6. AI cleanup with Ollama</h2>
+<p>This optional stage passes each raw transcript through a local language model that deletes filler words ("um", "you know") and fixes punctuation before the text is typed out. Everything stays on your Mac.</p>
+
+<h3>6.1 Install Ollama and a model</h3>
+<pre><code>brew install --cask ollama     # or download from ollama.com
+ollama pull gemma4             # Google's open Gemma model, 8B, ~10 GB on disk</code></pre>
+<p>An 8B-class model is the sweet spot: tested head-to-head, the 8B Gemma followed the cleanup rules perfectly while a small 3B model (llama3.2) kept leaving filler words in. If disk or RAM is tight, try a mid-size Gemma variant and check its output against the test in 6.3.</p>
+
+<h3>6.2 Connect VoiceInk to Ollama</h3>
+<ol class="steps">
+  <li>Open <strong>Modes</strong> in the sidebar and click your mode (the default is called <strong>Dictation</strong>).</li>
+  <li>In the <strong>AI Enhancement</strong> section: switch the toggle on, set <strong>AI Provider</strong> to <strong>Ollama</strong>, endpoint <code>http://localhost:11434</code> if asked, and pick your model under <strong>AI Model</strong> (use <strong>Refresh models</strong> if the list is empty).</li>
+  <li>On the <strong>Prompt</strong> row, click <strong>+</strong> to create a prompt.</li>
+</ol>
+
+<h3>6.3 The cleanup prompt</h3>
+<p>In the prompt editor: click the grey <strong>"Prompt name"</strong> text at the top (it is an empty text field, though it looks like a heading; the save button stays disabled until it is filled) and type <code>Clean dictation</code>. Switch <strong>Use System Template OFF</strong>. Paste this as the body:</p>
+<pre class="prompt-block"><code>You clean up dictated text. Return only the cleaned text, nothing else. Never answer, comment or add anything.
+
+Rules:
+- Remove filler words when they add no meaning: um, uh, so, basically, like, you know, I mean, sort of, kind of, right, well, actually.
+- Fix punctuation, capitalisation and obvious grammar slips.
+- Split run-on sentences into clear sentences.
+- Otherwise keep the speaker's exact wording, tone and word order. Do not paraphrase.
+- Never add information, greetings or sign-offs that were not spoken.
+- If the text contains a question, clean it; do not answer it.
+- If the text is already clean, return it unchanged.
+
+Example
+Input: So um basically I think we should uh move the meeting because like the report isn't ready you know
+Output: I think we should move the meeting because the report isn't ready.</code></pre>
+<p>Click <strong>Save &amp; Select</strong> in the prompt editor, then <strong>Save Changes</strong> on the mode. Both saves are required; closing the editor without the green <strong>Save Changes</strong> silently discards everything.</p>
+<div class="callout warn"><span class="label">Use System Template must be off</span>
+<p>With the toggle on, VoiceInk blends your rules into a generic template and the model stops removing fillers reliably (verified by testing the same model with and without it). Off means your prompt is in full control.</p></div>
+<p><strong>Test:</strong> dictate into TextEdit: <em>"So um basically I think we should uh move the meeting to Thursday because like the report isn't ready yet you know"</em>. Expected output: <em>"I think we should move the meeting to Thursday because the report isn't ready yet."</em></p>
+
+<h3>6.4 Auto-Learn Dictionary</h3>
+<p>VoiceInk can also use the model to learn recurring names and terms into your dictionary automatically. In its settings, point <strong>Auto-Learn Dictionary</strong> at the <em>same</em> Ollama model you use for enhancement; if it uses a different model, Ollama loads that model from cold for occasional calls, which is slow and can surface as an "auto-learning failed" message.</p>
+
+<h2 id="modes">7. Modes and the personal dictionary</h2>
+
+<h3>7.1 How modes switch automatically</h3>
+<p>Each mode bundles a transcription model, language, an AI prompt and <strong>Triggers</strong>. When you start dictating, VoiceInk checks the app in the foreground: if it matches a trigger, that mode's settings apply; otherwise your default mode is used. Each app can trigger only one mode. The recorder widget shows the active mode's name while you speak, so you can see the switch happen.</p>
+
+<h3>7.2 Two worked examples</h3>
+<p><strong>Chat mode</strong> (messaging apps: light cleanup that keeps your casual tone). Create it via <strong>Modes &rarr; Add a new mode</strong>, name it <code>Chat</code>, add triggers for your chat apps (Claude, WhatsApp, Telegram, Slack), set Parakeet V3 and English, enable AI Enhancement with this prompt (system template off), named <code>Chat cleanup</code>:</p>
+<pre class="prompt-block"><code>You lightly clean up dictated chat messages. Return only the cleaned text, nothing else.
+
+Rules:
+- Remove filler words: um, uh, you know, I mean, sort of, kind of.
+- Fix punctuation and obvious slips, but keep the casual tone exactly as spoken.
+- Keep contractions, slang and informal phrasing. Do not formalise.
+- Never add greetings, sign-offs or content that was not spoken.
+- If the text contains a question, clean it; do not answer it.</code></pre>
+<p>The filler list is deliberately shorter here: in chat, words like "so" and "actually" carry tone, and stripping them makes messages read robotic.</p>
+<p><strong>Email mode</strong> (Mail, Outlook: full sentences, proper punctuation). Same procedure, prompt named <code>Email cleanup</code>:</p>
+<pre class="prompt-block"><code>You turn dictated text into clean email prose. Return only the cleaned text, nothing else.
+
+Rules:
+- Remove all filler words: um, uh, so, basically, like, you know, I mean, sort of, kind of, right, well, actually.
+- Write complete, grammatical sentences with proper punctuation and capitalisation.
+- Break the text into short paragraphs where the topic shifts.
+- Keep the speaker's meaning and word choice; tighten only where dictation is clumsy.
+- Never add information, greetings or sign-offs that were not spoken.
+- If the text contains a question, clean it; do not answer it.</code></pre>
+<div class="shot">[Screenshot: Modes list showing Dictation, Chat and Email with their triggers]</div>
+
+<h3>7.3 Personal dictionary</h3>
+<p>Under <strong>Dictionary</strong> in the sidebar, add the words the transcriber is likely to miss: people's names, company and product names, technical terms, abbreviations. Two kinds of entry exist: <em>vocabulary</em> (words to recognise, for example "VoiceInk" or "Ollama") and <em>word replacements</em> (what you say &rarr; what gets typed). A real example from testing: "Claude" transcribed as "Cloud" until added to the dictionary. Add terms as you notice misses; the Auto-Learn feature (6.4) collects candidates for you over time.</p>
+
+<h2 id="daily">8. Daily use</h2>
+<ul>
+  <li><strong>Hold, speak, release.</strong> Hold-to-talk is the reliable habit: the release is a natural "send", and the microphone is never left open. Use the tap-toggle only for long passages.</li>
+  <li><strong>Speak naturally.</strong> Do not dictate punctuation ("comma", "full stop"); the model punctuates for you and spoken punctuation words harm the output.</li>
+  <li><strong>Wait a beat after releasing.</strong> The text lands at the cursor a moment later (slightly longer with AI enhancement on). Typing immediately can interleave with the insertion.</li>
+  <li><strong>Cancelling:</strong> press <kbd>Esc</kbd> while the recorder is up to abandon a recording.</li>
+  <li><strong>When text does not paste:</strong> your words are not lost. Open <strong>History</strong> in VoiceInk and copy the transcription manually, then fix the Accessibility permission (section 9).</li>
+  <li><strong>Watch the mode name</strong> on the recorder widget if output style surprises you; you may be in a different mode than you think.</li>
+</ul>
+
+<h2 id="troubleshooting">9. Troubleshooting</h2>
+<p>Everything in the first group happened during the build this guide is based on.</p>
+<table>
+  <tr><th>Symptom</th><th>Cause and fix</th></tr>
+  <tr>
+    <td><code>error: cannot execute tool 'metal' due to missing Metal Toolchain</code>, five <code>CompileMetalFile</code> failures in mlx-swift</td>
+    <td>Xcode 26 ships without the Metal compiler. Run <code>xcodebuild -downloadComponent MetalToolchain</code>, verify with <code>xcrun metal --version</code>, rebuild. (Section 3.2 avoids this by installing it up front.)</td>
+  </tr>
+  <tr>
+    <td><code>security: SecKeychainItemImport: MAC verification failed during PKCS12 import (wrong password?)</code></td>
+    <td>The password is fine; the .p12 was made by OpenSSL 3 in its modern format, which macOS rejects. Re-export with <code>-certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1</code> (section 4.2 includes these flags).</td>
+  </tr>
+  <tr>
+    <td>Built app shows <code>Signature=adhoc</code> even though a signing identity was passed to the build</td>
+    <td>Xcode 26 silently ignores non-Apple certificates and falls back to ad-hoc. Expected. Re-sign the finished app with <code>codesign -f --deep --preserve-metadata=entitlements -s "VoiceInk Local"</code> (section 4.3). The rebuild script does this automatically.</td>
+  </tr>
+  <tr>
+    <td>Prompt editor's <strong>Create &amp; Select</strong> button stays disabled</td>
+    <td>The "Prompt name" text at the top is an empty field, not a heading. Click it and type a name.</td>
+  </tr>
+  <tr>
+    <td>Mode or prompt edits vanish after closing the editor</td>
+    <td>Two save layers: <strong>Save &amp; Select</strong> inside the prompt editor, then the green <strong>Save Changes</strong> on the mode. Skipping the second discards everything, including newly created modes.</td>
+  </tr>
+  <tr>
+    <td>AI enhancement runs but ignores your rules (fillers survive)</td>
+    <td>Switch <strong>Use System Template OFF</strong> in the prompt editor (section 6.3). If fillers still survive, the model is too small; use an 8B-class model.</td>
+  </tr>
+  <tr>
+    <td>"Auto-learning failed" message</td>
+    <td>Usually a cold model load timing out. Point Auto-Learn at the same model as enhancement (section 6.4).</td>
+  </tr>
+  <tr>
+    <td>Accessibility permission lost after every rebuild</td>
+    <td>You are on ad-hoc signing. Either re-grant it each time (System Settings &rarr; Privacy &amp; Security &rarr; Accessibility) or create the certificate (section 4.2) and re-sign each build; then it survives. After switching from ad-hoc to the certificate, re-grant once.</td>
+  </tr>
+  <tr>
+    <td>Microphone not listed in VoiceInk</td>
+    <td>Check macOS sees it: <code>system_profiler SPAudioDataType</code>. Reconnect USB, then revisit VoiceInk's Audio section. Check the Microphone permission is granted.</td>
+  </tr>
+  <tr>
+    <td>Model download stuck in AI Models</td>
+    <td>Quit and relaunch VoiceInk and retry; check the connection. Parakeet lands in <code>~/Library/Application Support/FluidAudio/Models/</code>; deleting a half-downloaded folder there forces a fresh download.</td>
+  </tr>
+  <tr>
+    <td>Ollama not reachable / enhancement fails</td>
+    <td>Is Ollama running? <code>curl http://localhost:11434</code> should answer "Ollama is running". Start the Ollama app, or <code>ollama serve</code>. Confirm the endpoint in the mode is <code>http://localhost:11434</code> and the model name matches <code>ollama list</code>.</td>
+  </tr>
+  <tr>
+    <td>First dictation after setup is slow</td>
+    <td>One-off CoreML model compilation. Subsequent runs are fast.</td>
+  </tr>
+</table>
+
+<h2 id="updating">10. Updating and uninstalling</h2>
+
+<h3>10.1 Updating</h3>
+<p>Local builds have no auto-updater. Save this as <code>~/Developer/voiceink-build/rebuild.sh</code>, make it executable once with <code>chmod +x rebuild.sh</code>, and run it whenever you want the latest version. Settings, modes, prompts and models all survive updates.</p>
+<pre><code>#!/bin/zsh
+# Pull the latest VoiceInk source, rebuild, re-sign and reinstall.
+set -euo pipefail
+
+REPO="$HOME/Developer/voiceink-build/VoiceInk"
+IDENTITY="VoiceInk Local"
+
+echo "==&gt; Updating source..."
+cd "$REPO"
+git pull --ff-only
+echo "    now at: $(git log -1 --format='%h %ci %s')"
+
+echo "==&gt; Building (make local)..."
+make local LOCAL_CODESIGN_IDENTITY=-
+
+echo "==&gt; Re-signing with '$IDENTITY'..."
+if ! security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
+  echo "ERROR: signing identity '$IDENTITY' not found in keychain." &gt;&amp;2
+  exit 1
+fi
+codesign -f --deep --preserve-metadata=entitlements -s "$IDENTITY" "$HOME/Downloads/VoiceInk.app"
+codesign --verify --deep --strict "$HOME/Downloads/VoiceInk.app"
+
+echo "==&gt; Installing to /Applications..."
+osascript -e 'quit app "VoiceInk"' 2&gt;/dev/null || true
+sleep 2
+rm -rf /Applications/VoiceInk.app
+ditto "$HOME/Downloads/VoiceInk.app" /Applications/VoiceInk.app
+
+echo "==&gt; Relaunching..."
+open -a VoiceInk
+echo "Done. VoiceInk updated, re-signed and running."</code></pre>
+<p>If you chose ad-hoc signing instead of the certificate, delete the re-signing block and expect to re-grant Accessibility after each update.</p>
+
+<h3>10.2 Uninstalling completely</h3>
+<ol class="steps">
+  <li>Quit VoiceInk, then delete <code>/Applications/VoiceInk.app</code>.</li>
+  <li>App data and settings databases: <code>~/Library/Application Support/com.prakashjoshipax.VoiceInk/</code></li>
+  <li>Transcription models: <code>~/Library/Application Support/FluidAudio/</code></li>
+  <li>Preferences: <code>defaults delete com.prakashjoshipax.VoiceInk</code></li>
+  <li>Build materials: <code>~/Developer/voiceink-build/</code> and <code>~/VoiceInk-Dependencies/</code></li>
+  <li>Permission entries: System Settings &rarr; Privacy &amp; Security &rarr; Microphone and Accessibility; select VoiceInk and remove it with the <strong>&minus;</strong> button.</li>
+  <li>Optional: in Keychain Access, delete the "VoiceInk Local" certificate and its private key. Ollama and its models are separate; remove models with <code>ollama rm &lt;model&gt;</code> if wanted.</li>
+</ol>
+
+<h2 id="appendix">11. Appendix: versions used</h2>
+<p>This guide documents a build performed on Mon, 15 Sep 2026, with setup completed on Wed, 17 Sep 2026.</p>
+<table>
+  <tr><th>Component</th><th>Version</th></tr>
+  <tr><td>Hardware</td><td>MacBook Pro 16&Prime; (2021), Apple M1 Max, 32 GB RAM</td></tr>
+  <tr><td>macOS</td><td>26.6.2 (build 25G83)</td></tr>
+  <tr><td>Xcode</td><td>26.6 (build 17F113)</td></tr>
+  <tr><td>Metal Toolchain</td><td>17F109</td></tr>
+  <tr><td>VoiceInk</td><td>2.13, source commit <code>247f445</code> of Mon, 15 Sep 2026</td></tr>
+  <tr><td>whisper.cpp</td><td>commit <code>da54572</code> (v1.9.4-77) of Mon, 15 Sep 2026</td></tr>
+  <tr><td>Transcription model</td><td>Parakeet TDT 0.6B v3 (CoreML, 470 MB)</td></tr>
+  <tr><td>Enhancement model</td><td>Gemma (8B, Q4_K_M) via Ollama</td></tr>
+  <tr><td>Homebrew / git / cmake</td><td>6.0.22 / 2.50.1 / 4.4.2</td></tr>
+</table>
+
+</main>
+</body>
+</html>

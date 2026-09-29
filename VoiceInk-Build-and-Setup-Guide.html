@@ -119,9 +119,9 @@
 <main>
 
 <h1>VoiceInk: Build and Setup Guide</h1>
-<p class="meta">Version 1.2 &middot; Last updated: Tue, 29 Sep 2026 19:40 &middot; Author: Mahesh Mirchandani<br>
+<p class="meta">Version 1.3 &middot; Last updated: Tue, 29 Sep 2026 20:02 &middot; Author: Mahesh Mirchandani<br>
 From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 Max). Every command below was actually run; every error listed actually happened.<br>
-New in version 1.2: a security note on the signing certificate (section 4.2). Version 1.1 added a warning about the in-app updater and a safer update script (section 10.1), a clean-install step (section 4.3), and a fix for lost Accessibility permission (section 9).</p>
+New in version 1.3: the signing key moves to its own password-protected keychain, which locks itself (sections 4.2, 4.3, 9 and 10). Version 1.1 added a warning about the in-app updater and a safer update script (section 10.1), a clean-install step (section 4.3), and a fix for lost Accessibility permission (section 9).</p>
 
 <div class="callout warn"><span class="label">macOS only</span>
 <p>VoiceInk is a native macOS application (Swift and CoreML). There is no Windows or Linux version, and none can be built from this source code. You need a Mac.</p>
@@ -191,8 +191,11 @@ Build complete! App saved to: ~/Downloads/VoiceInk.app</code></pre>
 <p>macOS ties the Accessibility permission (which VoiceInk needs to type text into other apps) to the app's code signature. The build above is "ad-hoc" signed: a signature derived from the binary itself, which therefore changes on every rebuild. With ad-hoc signing, <strong>every rebuild looks like a brand-new app to macOS and you must re-grant Accessibility each time</strong>. That is livable if you rarely update. The better option is a one-off self-signed certificate, which keeps the signature identity stable so permissions survive rebuilds.</p>
 
 <h3>4.2 Create a signing certificate (recommended, one-off)</h3>
-<p>The following creates a certificate named <code>VoiceInk Local</code>, valid ten years, imports it into your login keychain and trusts it for code signing only. macOS will show one password dialog for the trust change; enter your Mac password and click <strong>Update Settings</strong>.</p>
-<pre><code>WORK="$(mktemp -d)" &amp;&amp; cd "$WORK"
+<p>The following creates a separate keychain used only for signing, protected by its own password and set to lock itself when the Mac sleeps and after five minutes. It then creates a certificate named <code>VoiceInk Local</code>, valid ten years, stores it in that keychain and trusts it for code signing only. macOS shows two dialogs: the first asks you to choose the new keychain's password (keep it in your password manager; every rebuild asks for it), the second asks for your Mac password to confirm the trust change (click <strong>Update Settings</strong>). Run it in Terminal, which uses zsh by default.</p>
+<pre><code>KC="$HOME/Library/Keychains/voiceink-signing.keychain-db"
+ORIG_LIST=("${(@f)$(security list-keychains -d user | sed -e 's/^[[:space:]]*"//' -e 's/"$//')}")
+umask 077
+WORK="$(mktemp -d)" &amp;&amp; cd "$WORK"
 
 cat &gt; codesign.cnf &lt;&lt; 'EOF'
 [req]
@@ -209,28 +212,43 @@ EOF
 
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem \
   -days 3650 -nodes -config codesign.cnf -extensions codesign_ext
-
+P12PW="$(openssl rand -hex 16)"
 openssl pkcs12 -export -out cert.p12 -inkey key.pem -in cert.pem \
-  -passout pass:vlocal-import \
-  -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1
+  -passout "pass:$P12PW" -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1
+rm -f key.pem
 
-security import cert.p12 -k ~/Library/Keychains/login.keychain-db \
-  -P vlocal-import -T /usr/bin/codesign -T /usr/bin/security
+security create-keychain -P "$KC"                   # dialog 1: choose the keychain password
+security set-keychain-settings -l -u -t 300 "$KC"   # lock on sleep and after 5 minutes
+security import cert.p12 -k "$KC" -P "$P12PW" -T /usr/bin/codesign
+rm -f cert.p12
+security add-trusted-cert -p codeSign -k "$KC" cert.pem   # dialog 2: your Mac password
 
-security add-trusted-cert -p codeSign \
-  -k ~/Library/Keychains/login.keychain-db cert.pem
-
-security find-identity -v -p codesigning   # should list "VoiceInk Local"
-cd ~ &amp;&amp; rm -rf "$WORK"</code></pre>
-<div class="callout warn"><span class="label">Security trade-off: read before running</span>
-<p>The two <code>-T</code> options on <code>security import</code> let <code>codesign</code> and <code>security</code> use this key without asking you. That is what makes rebuilds prompt-free, but it applies to any program running under your account, including malware if your Mac were ever compromised. Such a program could sign itself as VoiceInk and inherit the Accessibility and Microphone permissions you granted VoiceInk. This is the usual arrangement on developer Macs and is reasonable on a personal Mac that only you use. On a shared or work Mac, skip the certificate: use ad-hoc signing and re-grant Accessibility after each update (see the note under the script in section 10.1).</p></div>
+security find-identity -v -p codesigning "$KC"   # should list "VoiceInk Local"
+security lock-keychain "$KC"
+security list-keychains -d user -s "${ORIG_LIST[@]}"   # create-keychain added it; take it off
+cd ~ &amp;&amp; rm -rf "$WORK" &amp;&amp; umask 022</code></pre>
+<div class="callout note"><span class="label">Why a separate keychain</span>
+<p>This key can sign code that macOS then treats as VoiceInk, complete with the Accessibility and Microphone permissions you granted VoiceInk. In your login keychain it would be usable by any program running under your account. In its own keychain it is usable only while that keychain is unlocked, which happens for a moment during each rebuild, after you enter its password. If the password dialog offers <strong>Always Allow</strong>, that only affects access while the keychain is unlocked; the lock still applies.</p></div>
+<div class="callout warn"><span class="label">Set up with an earlier version of this guide?</span>
+<p>Versions before 1.3 kept the key in your login keychain with no password protection. Run the commands above once, then delete the old identity (the first command below shows its SHA-1), rebuild with the script in <a href="#updating">section 10.1</a>, and reset the two permissions so you can grant them again: the new key gives the app a new signature, so this happens once.</p>
+<pre><code>security find-identity -p codesigning ~/Library/Keychains/login.keychain-db
+security delete-identity -Z &lt;SHA-1 of the old "VoiceInk Local"&gt; ~/Library/Keychains/login.keychain-db
+tccutil reset Accessibility com.prakashjoshipax.VoiceInk
+tccutil reset Microphone com.prakashjoshipax.VoiceInk</code></pre></div>
 <div class="callout note"><span class="label">Why the odd openssl flags</span>
 <p>Homebrew's OpenSSL 3 writes modern PKCS#12 files that macOS cannot import (it fails with "MAC verification failed", a misleading message). The <code>-certpbe/-keypbe/-macalg</code> flags force the older format macOS accepts.</p></div>
 
 <h3>4.3 Re-sign and install</h3>
 <p>Xcode 26 refuses to sign with non-Apple certificates during the build (it silently falls back to ad-hoc, even when told otherwise), so the certificate is applied <em>after</em> the build:</p>
-<pre><code>codesign -f --deep --preserve-metadata=entitlements \
-  -s "VoiceInk Local" ~/Downloads/VoiceInk.app
+<pre><code>KC="$HOME/Library/Keychains/voiceink-signing.keychain-db"
+ID_HASH=$(security find-identity -p codesigning "$KC" \
+  | awk -v n="VoiceInk Local" 'index($0, "\"" n "\"") &amp;&amp; !f {print $2; f=1}')
+ORIG_LIST=("${(@f)$(security list-keychains -d user | sed -e 's/^[[:space:]]*"//' -e 's/"$//')}")
+security list-keychains -d user -s "${ORIG_LIST[@]}" "$KC"   # visible to codesign for now
+codesign -f --deep --preserve-metadata=entitlements \
+  --keychain "$KC" -s "$ID_HASH" ~/Downloads/VoiceInk.app   # dialog: keychain password, Allow
+security list-keychains -d user -s "${ORIG_LIST[@]}"         # back to how it was
+security lock-keychain "$KC"
 codesign --verify --deep --strict ~/Downloads/VoiceInk.app   # silence means success
 
 rm -rf /Applications/VoiceInk.app
@@ -241,7 +259,7 @@ rm -rf ~/Downloads/VoiceInk.app ~/Developer/voiceink-build/VoiceInk/.local-build
 defaults write com.prakashjoshipax.VoiceInk VoiceInkChecksForUpdatesOnLaunch -bool false
 
 open /Applications/VoiceInk.app</code></pre>
-<p>If you skipped the certificate, leave out the two <code>codesign</code> lines. The app should launch and show its onboarding window.</p>
+<p>macOS asks for the signing keychain password; enter it and click <strong>Allow</strong>. If you skipped the certificate, start from the <code>rm -rf /Applications/VoiceInk.app</code> line. The app should launch and show its onboarding window.</p>
 <div class="callout note"><span class="label">Why delete the other copies</span>
 <p>The build leaves two more copies of the app, one in <code>~/Downloads</code> and one inside the build folder, and macOS knows about all of them. If one of those is launched, or is the copy that turns on <strong>Launch at login</strong>, permissions and updates attach to the wrong app. A single copy in /Applications avoids that. The update check is explained in <a href="#updating">section 10.1</a>.</p></div>
 
@@ -409,6 +427,14 @@ Rules:
     <td>One-off CoreML model compilation. Subsequent runs are fast.</td>
   </tr>
   <tr>
+    <td>Re-signing fails with <code>errSecInternalComponent</code></td>
+    <td>The signing keychain stayed locked: the password dialog was cancelled or denied, or the password was wrong. Run the script again and enter the keychain password.</td>
+  </tr>
+  <tr>
+    <td><code>codesign</code> says the identity <code>VoiceInk Local</code> is ambiguous</td>
+    <td>Two identities share the name, usually an old one in the login keychain from a version of this guide before 1.3. Delete the old one (section 4.2, "Set up with an earlier version").</td>
+  </tr>
+  <tr>
     <td>Dictation stopped working after an update; VoiceInk says accessibility permissions are not provided</td>
     <td>An update accepted inside the app replaced your build with the official one (section 10.1), and macOS no longer matches your permission to it. Run the update script in section 10.1, which rebuilds, reinstalls and removes the stray copies. Then clear the stale entry with <code>tccutil reset Accessibility com.prakashjoshipax.VoiceInk</code>, open VoiceInk, switch it on under System Settings &rarr; Privacy &amp; Security &rarr; Accessibility, and quit and reopen VoiceInk. Settings, modes and history survive.</td>
   </tr>
@@ -419,18 +445,20 @@ Rules:
 <h3>10.1 Updating</h3>
 <div class="callout warn"><span class="label">Never accept an update offered inside the app</span>
 <p>Local builds still contain the developer's updater (Sparkle). If you accept an update from the Dashboard's update button or from <strong>Check for Updates&hellip;</strong>, it replaces your build with the official version. That version has a different signature, so macOS stops honouring your Accessibility and Microphone permissions, and dictation stops working with the message that accessibility permissions are not provided. This happened on the machine this guide is based on; the recovery steps are in <a href="#troubleshooting">section 9</a>.</p></div>
-<p>Update by rebuilding instead. Save the script below as <code>~/Developer/voiceink-build/rebuild.sh</code>, make it executable once with <code>chmod +x rebuild.sh</code>, and run it whenever you want the latest version. As well as rebuilding, it reinstalls the Metal Toolchain if an Xcode upgrade removed it, turns the in-app update check off, removes the extra copies of the app the build leaves behind, and checks that <strong>Launch at login</strong> opens the copy in /Applications. Settings, modes, prompts and models all survive updates.</p>
+<p>Update by rebuilding instead. Save the script below as <code>~/Developer/voiceink-build/rebuild.sh</code>, make it executable once with <code>chmod +x rebuild.sh</code>, and run it whenever you want the latest version. As well as rebuilding, it reinstalls the Metal Toolchain if an Xcode upgrade removed it, turns the in-app update check off, removes the extra copies of the app the build leaves behind, and checks that <strong>Launch at login</strong> opens the copy in /Applications. At the signing step, about 10 to 20 minutes in, macOS asks for the signing keychain password, so stay near the Mac. Settings, modes, prompts and models all survive updates.</p>
 <pre><code>#!/bin/zsh
 # Pull the latest VoiceInk source, rebuild, re-sign and reinstall.
-# Also: reinstalls the Metal Toolchain after an Xcode upgrade, turns off
-# the in-app update check (never accept those updates; see section 10.1),
-# removes the extra copies of the app the build leaves behind, and checks
-# that "Launch at login" opens the copy in /Applications.
+# Also: reinstalls the Metal Toolchain after an Xcode upgrade, signs from the
+# dedicated signing keychain (section 4.2; macOS asks for its password),
+# turns off the in-app update check (never accept those updates; see section
+# 10.1), removes the extra copies of the app the build leaves behind, and
+# checks that "Launch at login" opens the copy in /Applications.
 
 set -euo pipefail
 
 REPO="$HOME/Developer/voiceink-build/VoiceInk"
 IDENTITY="VoiceInk Local"
+SIGNING_KC="$HOME/Library/Keychains/voiceink-signing.keychain-db"
 BUNDLE_ID="com.prakashjoshipax.VoiceInk"
 BUILT="$HOME/Downloads/VoiceInk.app"
 DEST="/Applications/VoiceInk.app"
@@ -460,13 +488,24 @@ fi
 echo "==&gt; Building (make local)..."
 make local LOCAL_CODESIGN_IDENTITY=-
 
-echo "==&gt; Re-signing with '$IDENTITY'..."
-if ! security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
-  echo "ERROR: signing identity '$IDENTITY' not found in keychain." &gt;&amp;2
-  echo "Create it first: section 4.2 of the VoiceInk Build and Setup Guide." &gt;&amp;2
-  exit 1
-fi
-codesign -f --deep --preserve-metadata=entitlements -s "$IDENTITY" "$BUILT"
+echo "==&gt; Re-signing with '$IDENTITY' from the signing keychain..."
+[[ -f "$SIGNING_KC" ]] || { echo "ERROR: $SIGNING_KC not found. Create it first (section 4.2)." &gt;&amp;2; exit 1; }
+ID_HASH=$(security find-identity -p codesigning "$SIGNING_KC" \
+  | awk -v n="$IDENTITY" 'index($0, "\"" n "\"") &amp;&amp; !f {print $2; f=1}')
+[[ -n "$ID_HASH" ]] || { echo "ERROR: no '$IDENTITY' identity in $SIGNING_KC" &gt;&amp;2; exit 1; }
+# The keychain must be on the search list while codesign uses it; restore the
+# original list and lock the keychain again however this block exits.
+ORIG_LIST=("${(@f)$(security list-keychains -d user | sed -e 's/^[[:space:]]*"//' -e 's/"$//')}")
+restore_keychains() {
+  security list-keychains -d user -s "${ORIG_LIST[@]}"
+  security lock-keychain "$SIGNING_KC" 2&gt;/dev/null || true
+}
+trap restore_keychains EXIT
+security list-keychains -d user -s "${ORIG_LIST[@]}" "$SIGNING_KC"
+echo "    macOS now asks for the signing keychain password: enter it, click Allow."
+codesign -f --deep --preserve-metadata=entitlements --keychain "$SIGNING_KC" -s "$ID_HASH" "$BUILT"
+restore_keychains
+trap - EXIT
 codesign --verify --deep --strict "$BUILT"
 
 echo "==&gt; Installing to /Applications..."
@@ -518,11 +557,11 @@ echo "Done. VoiceInk updated, re-signed and running."</code></pre>
   <li>Preferences: <code>defaults delete com.prakashjoshipax.VoiceInk</code></li>
   <li>Build materials: <code>~/Developer/voiceink-build/</code> and <code>~/VoiceInk-Dependencies/</code></li>
   <li>Permission entries: System Settings &rarr; Privacy &amp; Security &rarr; Microphone and Accessibility; select VoiceInk and remove it with the <strong>&minus;</strong> button.</li>
-  <li>Optional: in Keychain Access, delete the "VoiceInk Local" certificate and its private key. Ollama and its models are separate; remove models with <code>ollama rm &lt;model&gt;</code> if wanted.</li>
+  <li>Optional: delete the signing keychain, certificate and key included: <code>security delete-keychain ~/Library/Keychains/voiceink-signing.keychain-db</code>. Ollama and its models are separate; remove models with <code>ollama rm &lt;model&gt;</code> if wanted.</li>
 </ol>
 
 <h2 id="appendix">11. Appendix: versions used</h2>
-<p>This guide documents a build performed on Mon, 15 Sep 2026, with setup completed on Wed, 17 Sep 2026. Version 1.1 changes follow a rebuild on Tue, 29 Sep 2026 with Xcode 27.0 (27A266a) and VoiceInk 2.21 (source commit <code>7fdc5c3</code>).</p>
+<p>This guide documents a build performed on Mon, 15 Sep 2026, with setup completed on Wed, 17 Sep 2026. Version 1.1 changes follow a rebuild on Tue, 29 Sep 2026 with Xcode 27.0 (27A266a) and VoiceInk 2.21 (source commit <code>7fdc5c3</code>). Version 1.3 signing changes were run on the same Mac the same evening, including a check that a locked signing keychain refuses to sign.</p>
 <table>
   <tr><th>Component</th><th>Version</th></tr>
   <tr><td>Hardware</td><td>MacBook Pro 16&Prime; (2021), Apple M1 Max, 32 GB RAM</td></tr>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Private, on-device voice dictation on Windows: the options compared, Handy set up step by step, and optional local AI clean-up with Ollama.">
+<meta name="title" content="Talk Instead of Type on Windows">
+<meta name="created" content="2026-09-29-2041">
+<meta name="last_modified" content="2026-09-29-2041">
+<meta name="author" content="Mahesh Mirchandani">
+<meta name="status" content="published">
+<meta name="supersedes" content="none">
+<title>Talk Instead of Type on Windows</title>
+<style>
+  :root {
+    --ink: #1d2129; --muted: #5b6270; --line: #d8dbe2; --bg: #ffffff;
+    --side-bg: #f4f5f8; --accent: #0a5ad4; --accent-soft: #e8f0fe;
+    --warn-bg: #fdf3e4; --warn-line: #dd9327;
+    --tip-bg: #e9f6ec; --tip-line: #3f9d58;
+    --note-bg: #eef2f8; --note-line: #7c8db0;
+    --code-bg: #f5f6f8; --code-line: #e1e3e9;
+    --badge-mac: #3a3f4b; --badge-win: #0a66a8; --badge-fg: #ffffff;
+    --card-bg: #fafbfc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e6e8ee; --muted: #9aa1ad; --line: #363b46; --bg: #16181d;
+      --side-bg: #1d2027; --accent: #6fa3ef; --accent-soft: #24304a;
+      --warn-bg: #33270f; --warn-line: #c98f2d;
+      --tip-bg: #14291a; --tip-line: #4a9e63;
+      --note-bg: #1d2531; --note-line: #6a7c9e;
+      --code-bg: #1e2128; --code-line: #333845;
+      --badge-mac: #b8bdc9; --badge-win: #5aa2d8; --badge-fg: #16181d;
+      --card-bg: #1a1d23;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---- Sidebar ---- */
+  #menuBtn {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 30;
+    background: var(--side-bg); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer;
+  }
+  nav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 20;
+    background: var(--side-bg); border-right: 1px solid var(--line);
+    padding: 22px 14px 40px; overflow-y: auto;
+  }
+  nav .navtitle { font-weight: 700; font-size: 15px; margin: 0 8px 2px; }
+  nav .stamp { font-size: 12px; color: var(--muted); margin: 0 8px 14px; }
+  .group { margin-bottom: 6px; }
+  .group > button {
+    width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+    color: var(--muted); font: 700 12px/1.4 inherit; letter-spacing: 0.6px;
+    text-transform: uppercase; padding: 8px 8px 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .group > button .chev { margin-left: auto; transition: transform 0.15s; font-size: 10px; }
+  .group.closed > button .chev { transform: rotate(-90deg); }
+  .group.closed ul { display: none; }
+  .plat {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    border-radius: 4px; padding: 1px 6px; color: var(--badge-fg);
+  }
+  .plat.mac { background: var(--badge-mac); }
+  .plat.win { background: var(--badge-win); }
+  nav ul { list-style: none; margin: 0; padding: 0; }
+  nav li a {
+    display: block; padding: 5px 10px; border-radius: 6px;
+    color: var(--ink); font-size: 14px; border-left: 3px solid transparent;
+  }
+  nav li a:hover { background: var(--accent-soft); text-decoration: none; }
+  nav li a.active { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+
+  main { margin-left: 280px; padding: 42px 48px 80px; max-width: 850px; }
+
+  h1 { font-size: 30px; line-height: 1.25; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+  h2 { font-size: 23px; margin: 46px 0 10px; padding-top: 12px; border-top: 1px solid var(--line);
+       display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  h3 { font-size: 18px; margin: 26px 0 8px; }
+  p { margin: 10px 0; }
+  ul li, ol li { margin: 5px 0; }
+
+  ol.steps { counter-reset: step; list-style: none; margin: 14px 0; padding: 0; }
+  ol.steps > li { counter-increment: step; margin: 14px 0; padding-left: 44px; position: relative; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 1px;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps .do { font-weight: 700; display: block; }
+  ol.steps .why { color: var(--muted); font-size: 14.5px; display: block; margin-top: 2px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--code-line); border-radius: 8px;
+        padding: 12px 14px; overflow-x: auto; font-size: 13.5px; line-height: 1.5; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  p code, li code, td code, .do code, .why code {
+    background: var(--code-bg); border: 1px solid var(--code-line);
+    border-radius: 4px; padding: 1px 5px; font-size: 13px; white-space: nowrap;
+  }
+  kbd { font-family: inherit; font-size: 13px; border: 1px solid var(--line);
+        border-bottom-width: 2px; border-radius: 5px; padding: 1px 7px; background: var(--side-bg); }
+
+  .callout { border-left: 4px solid; border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .callout p { margin: 6px 0; }
+  .warn { background: var(--warn-bg); border-color: var(--warn-line); }
+  .tip  { background: var(--tip-bg);  border-color: var(--tip-line); }
+  .note { background: var(--note-bg); border-color: var(--note-line); }
+  .callout .label { font-weight: 700; font-size: 12.5px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .shot { border: 2px dashed var(--line); border-radius: 8px; padding: 16px;
+          color: var(--muted); font-size: 14px; text-align: center; margin: 14px 0; background: var(--card-bg); }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--side-bg); }
+
+  .decision { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .decision .card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--card-bg); }
+  .decision h4 { margin: 0 0 6px; font-size: 16px; }
+  @media (max-width: 700px) { .decision { grid-template-columns: 1fr; } }
+
+  .qcard { border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin: 16px 0; background: var(--card-bg); }
+  .qcard h3 { margin-top: 0; }
+
+  footer { margin-left: 280px; padding: 24px 48px 60px; max-width: 850px;
+           color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
+  @media (max-width: 920px) {
+    #menuBtn { display: block; }
+    nav { transform: translateX(-100%); transition: transform 0.2s; width: 280px; }
+    nav.open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,0.35); }
+    main, footer { margin-left: 0; padding: 60px 22px 60px; }
+  }
+  @media print {
+    nav, #menuBtn { display: none; }
+    main, footer { margin: 0; padding: 0; max-width: none; }
+    h2 { break-before: page; border-top: none; }
+    h1 + .meta + * , h2:first-of-type { break-before: auto; }
+    pre, .callout, table, .shot, .qcard, .decision .card { break-inside: avoid; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+
+<button id="menuBtn" aria-label="Menu">&#9776;</button>
+
+<nav id="sidebar">
+  <p class="navtitle">Talk Instead of Type: Windows</p>
+  <p class="stamp">v1 &middot; Last updated: Tue, 29 Sep 2026 20:41</p>
+  <p class="stamp"><a href="index.html">On a Mac? The main guide &rarr;</a></p>
+
+  <div class="group">
+    <button>Getting started <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#start">1. Start here</a></li>
+      <li><a href="#options">2. The options at a glance</a></li>
+      <li><a href="#not-covered">3. Not covered, and why</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button><span class="plat win">Windows</span> Set up Handy <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#install">4. Install Handy</a></li>
+      <li><a href="#setup">5. Microphone and model</a></li>
+      <li><a href="#shortcut">6. Shortcut and first test</a></li>
+      <li><a href="#snags">7. Known snags</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button>Optional <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#cleanup">8. AI clean-up with Ollama</a></li>
+    </ul>
+  </div>
+  <div class="group">
+    <button>Reference <span class="chev">&#9660;</span></button>
+    <ul>
+      <li><a href="#trouble">9. Troubleshooting</a></li>
+      <li><a href="#updating">10. Updating</a></li>
+      <li><a href="#uninstall">11. Uninstalling</a></li>
+      <li><a href="#sources">12. Sources checked</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+
+<h1>Talk Instead of Type on Windows</h1>
+<p class="meta">Private voice dictation on Windows &middot; Version 1 &middot; Last updated: Tue, 29 Sep 2026 20:41<br>
+Versions covered: Handy 0.9.7 and Ollama 0.34.4 &middot; Companion to the <a href="index.html">main guide</a></p>
+
+<h2 id="start">1. Start here</h2>
+<p>This guide sets up voice dictation on a Windows PC that runs entirely on your own computer. You hold a key, speak, let go, and your words appear as text wherever your cursor is: an email, a chat box, a document, a search bar. Nothing you say is sent anywhere.</p>
+<p>It is the Windows companion to the <a href="index.html">main guide</a>, which has a short section on Handy for Windows. This guide goes further: it compares the private options available on Windows, walks through the recommended one in full, and adds optional AI clean-up of your text, still without anything leaving your PC.</p>
+<p><strong>Who this is for:</strong> anyone comfortable installing an app and changing a setting. No technical background needed. The guide assumes you will dictate in English; other languages are noted where they differ.</p>
+<div class="callout note"><span class="label">A note on testing</span>
+<p>I use a Mac, so I have not been able to try the Windows steps myself. Everything here is drawn from each app's official documentation and release notes, checked in September 2026. If you follow this guide on Windows, I would be very glad to hear how it went, whether it worked first time or you hit a snag along the way. Your feedback will help make it better for the next reader. You can share it on the guide's <a href="https://github.com/maheshmirchandani/talk-instead-of-type/issues">GitHub page</a> (a free account is needed), or as a comment on the LinkedIn post where I shared it.</p></div>
+
+<h2 id="options">2. The options at a glance</h2>
+<p>Four options keep your voice on your own PC, and all of them can be used for free.</p>
+<table>
+  <tr><th>App</th><th>Privacy</th><th>Cost</th><th>AI clean-up of your text</th><th>Best for</th></tr>
+  <tr><td><strong>Handy</strong><br>(recommended)</td><td>Transcribes on your PC; no account</td><td>Free, open source</td><td>Optional and experimental, through Ollama, on its own shortcut</td><td>Most people. The same app the main guide suggests for Macs.</td></tr>
+  <tr><td><strong>Murmure</strong></td><td>Transcribes on your PC; states "zero tracking"</td><td>Free, open source</td><td>Built in, with a guided Ollama set-up; slow without a graphics card</td><td>Readers who want clean-up as a main feature. European languages only, and a newer project run largely by one person. It also uses <kbd>Ctrl</kbd>+<kbd>Space</kbd>, so install Murmure or Handy, not both.</td></tr>
+  <tr><td><strong>OpenWhispr</strong></td><td>Local in the free version; an optional paid plan uses the cloud</td><td>Free; the Pro plan (US$80 a year) is not needed</td><td>Small bundled models, or Ollama</td><td>Tinkerers. Use version 1.10.0 or later and stay signed out: before that release, signing in could send audio to its cloud while its settings still said "Local".</td></tr>
+  <tr><td><strong>Windows Voice Access</strong></td><td>Built into Windows 11 (22H2 or later); works offline after a one-off language download</td><td>Free</td><td>Only on Copilot+ PCs, where "fluid dictation" tidies your words</td><td>Trying dictation without installing anything. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> wakes it or puts it to sleep; there is no hold-to-talk key.</td></tr>
+</table>
+<h3>Why Handy</h3>
+<p>Handy is free and open source, its installers are digitally signed, it needs no account, and it is actively maintained, with a new release every few weeks. It is also the app the main guide suggests for Macs, so Mac and Windows users in the same household or team can help each other. Its AI clean-up is still marked experimental; dictation itself is the mature part. Murmure is a close second if AI clean-up matters most to you.</p>
+
+<h2 id="not-covered">3. Not covered, and why</h2>
+<ul>
+  <li><strong>Windows voice typing (<kbd>Win</kbd>+<kbd>H</kbd>).</strong> It uses Microsoft's online speech recognition, so your voice goes to Microsoft's cloud, and it works only with "Online speech recognition" switched on.</li>
+  <li><strong>Wispr Flow and Aqua Voice.</strong> Polished, but transcription happens in their cloud. Wispr Flow is free for 2,000 words a week, then US$12 a month billed yearly; Aqua Voice gives 1,000 free words, then US$8 a month billed yearly.</li>
+  <li><strong>Superwhisper for Windows.</strong> Closed source. Its local transcription is free, but its only on-device AI clean-up model is in the paid plan, marked experimental, and not available on ARM PCs.</li>
+  <li><strong>Dragon Professional.</strong> Installed software, but aimed at businesses and sold through a sales enquiry rather than a published price. The home editions stopped being sold in 2023.</li>
+  <li><strong>WhisperWriter and Whispering.</strong> Open source, but no longer being released for Windows: no new version since January 2024 and December 2025 respectively. WhisperWriter also needs Python to set up.</li>
+</ul>
+
+<h2 id="install"><span class="plat win">Windows</span> 4. Install Handy</h2>
+<p>Requirements: Windows 10 or 11, on an ordinary Intel or AMD PC (x64) or an ARM laptop. Handy does not publish a minimum Windows version or memory requirement; allow roughly 1 GB of free disk space for the app and one speech model. Version covered: 0.9.7.</p>
+<ol class="steps">
+  <li><span class="do">Check your system type: Settings &rarr; System &rarr; About, and look at <strong>System type</strong>.</span>
+      <span class="why">"x64-based processor" covers almost everyone. "ARM-based processor" means you need the ARM64 download.</span></li>
+  <li><span class="do">Go to <a href="https://handy.computer/download">handy.computer/download</a> and download the Windows <strong>setup (.exe)</strong> file for your system type.</span>
+      <span class="why">The .exe installs Handy just for you. The .msi installs it for every user on the PC, which mainly suits IT departments. Comfortable with the command line? <code>winget install cjpais.Handy</code> also works, although that package is maintained by the community rather than by Handy's developers.</span></li>
+  <li><span class="do">Run the installer. If a blue "Windows protected your PC" box appears, click <strong>More info</strong> and check that the publisher reads <strong>YNYNG LLC</strong> before choosing <strong>Run anyway</strong>.</span>
+      <span class="why">Handy's releases are signed under that company name rather than "Handy". The signature shows the file has not been altered since it was published. If the publisher is different or "Unknown", stop and download the file again from handy.computer.</span></li>
+  <li><span class="do">If Microsoft Defender reports a threat in the installer, do not override it.</span>
+      <span class="why">This happened once, to version 0.9.5, and the developer reported it to Microsoft as a false alarm. Even so, the safe response is to delete the file and try again later with the newest version, rather than telling Defender to allow it.</span></li>
+  <li><span class="do">Finish the installation and open Handy. It lives in the system tray: the small icons near the clock, possibly behind the <strong>^</strong> arrow.</span></li>
+</ol>
+
+<h2 id="setup"><span class="plat win">Windows</span> 5. Microphone and speech model</h2>
+<ol class="steps">
+  <li><span class="do">Let desktop apps use your microphone: Start &rarr; Settings &rarr; Privacy &amp; security &rarr; <strong>Microphone</strong>. Switch on <strong>Microphone access</strong>, <strong>Let apps access your microphone</strong> and <strong>Let desktop apps access your microphone</strong>.</span>
+      <span class="why">If any of these is off, Handy hears nothing and fails silently. It is the most common Windows snag.</span></li>
+  <li><span class="do">When Handy says "To get started, choose a transcription model", pick <strong>Parakeet Unified EN</strong> (marked Recommended, about 730 MB) and let it download.</span>
+      <span class="why">It is English only and runs well on an ordinary processor. Nothing is chosen for you, so this step matters. Dictating in other languages? Choose <strong>Nemotron Streaming 3.5</strong> (28 languages) instead, or use the <strong>Show all models</strong> link to find Parakeet V3 (25 European languages).</span></li>
+  <li><span class="do">Open Handy's settings from its tray icon and choose your microphone.</span>
+      <span class="why">Handy picks its own microphone, separately from the Windows default. Some built-in laptop microphones record only silence in Handy; if that happens, a headset or USB microphone is the reliable fix (see <a href="#snags">section 7</a>).</span></li>
+</ol>
+
+<h2 id="shortcut"><span class="plat win">Windows</span> 6. The shortcut and your first test</h2>
+<ol class="steps">
+  <li><span class="do">The default shortcut is <kbd>Ctrl</kbd>+<kbd>Space</kbd>. Hold it, speak, and let go.</span>
+      <span class="why">In the default "Auto" mode you can also tap it once to start and again to stop. Holding is the better habit, because the microphone is live only while your finger is down. You can change the key, or fix the mode to Hold or Toggle, in Handy's settings.</span></li>
+  <li><span class="do">Test it: open Notepad, hold the shortcut and say "Thanks for sending this over. Can we talk on Thursday afternoon?", then let go.</span>
+      <span class="why">A moment later the sentence should appear, capitals and question mark included. If nothing appears, see <a href="#trouble">section 9</a>.</span></li>
+  <li><span class="do">To have Handy ready every time you sign in, switch on <strong>Launch on Startup</strong> in its Advanced settings.</span>
+      <span class="why">It is off by default. <strong>Start Hidden</strong>, next to it, keeps the window out of your way.</span></li>
+  <li><span class="do">Optional: add names and specialist terms under <strong>Custom Words</strong>.</span>
+      <span class="why">This helps the model spell names it would otherwise guess at, and works best on plain words made of letters and numbers. Handy also removes filler words such as "um" by default.</span></li>
+</ol>
+
+<h2 id="snags"><span class="plat win">Windows</span> 7. Known snags, and what to do</h2>
+<p>These come from problems other Windows users have reported on Handy's GitHub page. Most people meet none of them.</p>
+<table>
+  <tr><th>What happens</th><th>What to do</th></tr>
+  <tr><td>Handy pastes something you copied earlier instead of your words</td><td>Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> to open Handy's Debug menu and switch on <strong>Reliable Paste (Beta)</strong>, or increase <strong>Paste Delay</strong>.</td></tr>
+  <tr><td>Nothing appears in an app running as administrator, or Handy freezes there</td><td>A known limitation. Dictate into a normal window, then copy the text across.</td></tr>
+  <tr><td>A laptop's built-in microphone records only silence</td><td>Use a headset or USB microphone and select it in Handy's settings.</td></tr>
+  <tr><td>Handy crashes or freezes while transcribing, or the screen turns blue</td><td>The graphics card is the likely cause. In Handy's settings, change graphics acceleration from <strong>Auto</strong> to the processor (CPU) option (check in the app for its exact name), and keep your graphics driver up to date.</td></tr>
+</table>
+
+<h2 id="cleanup">8. Optional: AI clean-up with Ollama</h2>
+<div class="callout warn"><span class="label">Experimental</span>
+<p>Handy marks this feature as experimental and switches it off by default. It also works on a different shortcut from normal dictation, so read step 7 before you try it.</p></div>
+<p>Handy can pass what you said through a small AI model on your own PC, which fixes punctuation, removes filler words and turns numbers into digits, without rewording you. Spoken: <em>"So um I think we should uh move the meeting to Thursday"</em>. Typed: <em>"I think we should move the meeting to Thursday."</em> It stays private by using <strong>Ollama</strong>, a free app that runs AI models on your PC and, by default, accepts requests only from your own computer.</p>
+<div class="callout note"><span class="label">Is your PC up to it?</span>
+<p>Ollama needs Windows 10 (22H2) or newer and at least 4 GB of disk space for itself, plus the model. It uses a recent NVIDIA or AMD graphics card if you have one, and otherwise runs on the processor, more slowly. Start with the smaller model below, and move up only if clean-up is quick and you want better results.</p></div>
+<ol class="steps">
+  <li><span class="do">Download Ollama from <a href="https://ollama.com/download/windows">ollama.com/download/windows</a> and run <code>OllamaSetup.exe</code>.</span>
+      <span class="why">It installs in your own user folder, needs no administrator rights, and starts with Windows as a tray app. To stop it starting automatically: Task Manager &rarr; Startup apps &rarr; ollama &rarr; Disable.</span></li>
+  <li><span class="do">Open Command Prompt (Start, type <code>cmd</code>, press Enter) and run <code>ollama pull gemma3:4b</code>.</span>
+      <span class="why">A 3.3 GB download that suits most laptops. With a good graphics card, try <code>gemma3:12b</code> (8.1 GB) instead. The smallest sensible option is <code>llama3.2:3b</code> (2.0 GB), although on a Mac, models this small missed some filler words in testing. Avoid models that "think" out loud, such as Gemma 4 and Qwen 3, which may add their reasoning to your text.</span></li>
+  <li><span class="do">In Handy, open <strong>Advanced</strong> settings and switch on <strong>Experimental Features</strong>.</span></li>
+  <li><span class="do">In the new <strong>Experimental</strong> group, switch on <strong>Post Processing</strong>. A <strong>Post Process</strong> page appears.</span></li>
+  <li><span class="do">On that page, choose the <strong>Custom</strong> provider. Leave the address as <code>http://localhost:11434/v1</code> and the API key empty, and type <code>gemma3:4b</code> (or the model you downloaded) as the model.</span>
+      <span class="why">The address is Ollama's, on your own PC. The model name must match exactly what you downloaded; <code>ollama list</code> in Command Prompt shows it.</span></li>
+  <li><span class="do">Select the built-in prompt <strong>Improve Transcriptions</strong>.</span>
+      <span class="why">It fixes spelling and punctuation, turns number words into digits and removes filler words, and it is told not to reword or reorder what you said.</span></li>
+  <li><span class="do">To dictate with clean-up, use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> in place of <kbd>Ctrl</kbd>+<kbd>Space</kbd>.</span>
+      <span class="why">This is the part that surprises people: the normal shortcut never uses clean-up. Use the plain shortcut for quick messages and the clean-up shortcut for longer, rambling ones. If the AI step fails, Handy types your original words instead, so nothing is lost.</span></li>
+  <li><span class="do">Test it with the messy sentence above.</span>
+      <span class="why">The first run after Ollama starts is slower while the model loads. If filler words survive, try the larger model.</span></li>
+</ol>
+
+<h2 id="trouble">9. Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Cause and fix</th></tr>
+  <tr><td>You speak, but nothing appears</td><td>Check the three microphone switches in <a href="#setup">section 5</a>, then that the right microphone is selected in Handy.</td></tr>
+  <tr><td>The shortcut does nothing, or triggers something else</td><td>Another app uses <kbd>Ctrl</kbd>+<kbd>Space</kbd>; some keyboard-language switchers and coding tools do. Change Handy's shortcut in its settings. If Murmure is also installed, it uses the same shortcut: keep one of the two.</td></tr>
+  <tr><td>Clean-up never happens</td><td>Use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>, not the normal shortcut. Check that Ollama is running (its tray icon) and that the model name in Handy matches <code>ollama list</code> exactly.</td></tr>
+  <tr><td>Clean-up takes many seconds</td><td>The model is too large for your PC, or it is running without a graphics card. Switch to <code>gemma3:4b</code> or <code>llama3.2:3b</code>.</td></tr>
+  <tr><td>Handy seems to have vanished</td><td>It lives in the system tray, near the clock, possibly behind the <strong>^</strong> arrow.</td></tr>
+  <tr><td>A blue "Windows protected your PC" box</td><td>Click <strong>More info</strong> and check that the publisher is <strong>YNYNG LLC</strong> before choosing <strong>Run anyway</strong>. Only do this for a file you downloaded yourself from handy.computer.</td></tr>
+</table>
+
+<h2 id="updating">10. Updating</h2>
+<ul>
+  <li><strong>Handy</strong> offers new versions itself; accept them. You can also install a newer version over the old one from <a href="https://handy.computer/download">handy.computer/download</a>. Settings and models are kept.</li>
+  <li><strong>Ollama</strong>: download the latest installer from <a href="https://ollama.com/download/windows">ollama.com/download/windows</a> and run it. Downloaded models are stored separately and are not affected.</li>
+  <li>After any update, do one quick test dictation. If text stops appearing, start with the microphone checks in <a href="#setup">section 5</a>.</li>
+</ul>
+
+<h2 id="uninstall">11. Uninstalling</h2>
+<h3>Handy</h3>
+<ol class="steps">
+  <li><span class="do">Quit Handy from its tray icon.</span></li>
+  <li><span class="do">Settings &rarr; Apps &rarr; Installed apps &rarr; Handy &rarr; <strong>Uninstall</strong>.</span></li>
+  <li><span class="do">Delete the leftover data: press <kbd>Win</kbd>+<kbd>R</kbd>, type <code>%APPDATA%</code>, press Enter, and delete the <code>com.pais.handy</code> folder.</span>
+      <span class="why">Its <code>models</code> folder holds the speech model, which is most of the space.</span></li>
+</ol>
+<h3>Ollama</h3>
+<ol class="steps">
+  <li><span class="do">Settings &rarr; Apps &rarr; Installed apps &rarr; Ollama &rarr; <strong>Uninstall</strong>.</span></li>
+  <li><span class="do">Delete the downloaded models: press <kbd>Win</kbd>+<kbd>R</kbd>, type <code>%USERPROFILE%</code>, press Enter, and delete the <code>.ollama</code> folder.</span>
+      <span class="why">That folder holds every model you pulled, several gigabytes each for the larger ones.</span></li>
+</ol>
+
+<h2 id="sources">12. Sources checked</h2>
+<p>Everything above was checked on Tue, 29 Sep 2026 against the sources below. Apps change; where the app you install differs from this guide, the app is the final word, and a note via the feedback links in <a href="#start">section 1</a> would be very welcome.</p>
+<ul>
+  <li><strong>Handy:</strong> <a href="https://handy.computer/download">handy.computer/download</a>; <a href="https://github.com/cjpais/Handy">github.com/cjpais/Handy</a> (README, the v0.9.7 release of Fri, 18 Sep 2026 and its source code); reported issues #434, #502, #1891, #2028 and #2141, and graphics issues #1755, #1965, #2007 and #2047.</li>
+  <li><strong>Ollama:</strong> <a href="https://docs.ollama.com/windows">docs.ollama.com/windows</a>, <a href="https://docs.ollama.com/gpu">/gpu</a>, <a href="https://docs.ollama.com/faq">/faq</a> and <a href="https://docs.ollama.com/api/openai-compatibility">/api/openai-compatibility</a>; <a href="https://ollama.com/library">ollama.com/library</a> model pages; release v0.34.4 of Wed, 23 Sep 2026.</li>
+  <li><strong>Microsoft:</strong> support.microsoft.com pages on <a href="https://support.microsoft.com/en-gb/accessibility/windows/use-voice-typing-to-talk-instead-of-type-on-your-pc">voice typing</a>, <a href="https://support.microsoft.com/en-us/windows/speech-voice-activation-inking-typing-and-privacy-149e0e60-7c93-dedd-a0d8-5731b71a4fef">speech privacy</a>, <a href="https://support.microsoft.com/en-us/windows/turn-on-app-permissions-for-your-microphone-in-windows-94991183-f69d-b4cf-4679-c98ca45f577a">microphone permissions</a>, <a href="https://support.microsoft.com/en-us/accessibility/windows/voice-access/get-started-with-voice-access">Voice Access</a> and <a href="https://support.microsoft.com/en-us/accessibility/windows/voice-access/fluid-dictation">fluid dictation</a>.</li>
+  <li><strong>Murmure:</strong> <a href="https://github.com/Kieirra/murmure">github.com/Kieirra/murmure</a> (release 1.11.3 of Mon, 31 Aug 2026) and <a href="https://docs.murmure.app/features/llm-connect/">docs.murmure.app</a>.</li>
+  <li><strong>OpenWhispr:</strong> <a href="https://github.com/OpenWhispr/openwhispr">github.com/OpenWhispr/openwhispr</a> (release 1.10.2 of Tue, 15 Sep 2026, and its changelog), <a href="https://docs.openwhispr.com/platform/windows">docs.openwhispr.com</a> and <a href="https://openwhispr.com/pricing">openwhispr.com/pricing</a>.</li>
+  <li><strong>Others:</strong> <a href="https://superwhisper.com/windows">superwhisper.com</a> (Windows page, changelog and plans); Nuance support answer <a href="https://nuance.custhelp.com/app/answers/detail/a_id/29838">29838</a>; <a href="https://wisprflow.ai/privacy">wisprflow.ai</a> privacy and pricing; <a href="https://aquavoice.com/pricing">aquavoice.com/pricing</a>; <a href="https://github.com/savbell/whisper-writer">WhisperWriter</a>; <a href="https://github.com/EpicenterHQ/epicenter">Whispering (Epicenter)</a>.</li>
+</ul>
+
+</main>
+
+<footer>
+<p><strong>About this guide.</strong> Put together by Mahesh from each app's official documentation, as a companion to the <a href="index.html">main guide</a>. See the note on testing in section 1.</p>
+</footer>
+
+<script>
+(function () {
+  var sidebar = document.getElementById('sidebar');
+  var btn = document.getElementById('menuBtn');
+  btn.addEventListener('click', function () { sidebar.classList.toggle('open'); });
+
+  // Collapsible groups
+  document.querySelectorAll('.group > button').forEach(function (b) {
+    b.addEventListener('click', function () { b.parentElement.classList.toggle('closed'); });
+  });
+
+  // Close the mobile drawer after choosing a section
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav li a'));
+  links.forEach(function (a) {
+    a.addEventListener('click', function () { sidebar.classList.remove('open'); });
+  });
+
+  // Scrollspy: highlight the section currently in view
+  var map = {};
+  links.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  var current = null;
+  function setActive(id) {
+    if (current === id) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (map[id]) map[id].classList.add('active');
+  }
+  var headings = Object.keys(map).map(function (id) { return document.getElementById(id); });
+  function onScroll() {
+    var pos = window.scrollY + 90;
+    var active = headings[0] ? headings[0].id : null;
+    headings.forEach(function (h) { if (h.offsetTop <= pos) active = h.id; });
+    if (active) setActive(active);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

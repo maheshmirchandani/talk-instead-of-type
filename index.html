@@ -148,7 +148,7 @@
 
 <nav id="sidebar">
   <p class="navtitle">Talk Instead of Type</p>
-  <p class="stamp">v2 &middot; Last verified: Wed, 17 Sep 2026</p>
+  <p class="stamp">v5 &middot; Last updated: Tue, 29 Sep 2026 20:41</p>
 
   <div class="group">
     <button>Getting started <span class="chev">&#9660;</span></button>
@@ -168,6 +168,7 @@
     <button><span class="plat win">Windows</span> Windows <span class="chev">&#9660;</span></button>
     <ul>
       <li><a href="#win-handy">5. Handy on Windows</a></li>
+      <li><a href="windows.html">Full Windows guide &rarr;</a></li>
     </ul>
   </div>
   <div class="group">
@@ -195,9 +196,9 @@
 <main>
 
 <h1>Talk Instead of Type</h1>
-<p class="meta">Private voice dictation on Mac and Windows &middot; Version 4 &middot; Last updated: Tue, 29 Sep 2026 19:40<br>
-Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.6 (Windows and Mac)<br>
-New in version 4: tidied for wider sharing. Version 3 corrected the update advice for anyone who built VoiceInk themselves (sections 9, 10 and 15).</p>
+<p class="meta">Private voice dictation on Mac and Windows &middot; Version 5 &middot; Last updated: Tue, 29 Sep 2026 20:41<br>
+Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.7 (Windows and Mac)<br>
+New in version 5: Handy details updated to version 0.9.7, and a separate <a href="windows.html">Windows guide</a>. Version 3 corrected the update advice for anyone who built VoiceInk themselves (sections 9, 10 and 15).</p>
 
 <h2 id="start">1. Start here</h2>
 <p>This guide sets you up with voice dictation that runs <em>entirely on your own computer</em>. You hold a key, speak, release the key, and your words appear as text wherever your cursor is: an email, a chat box, a document, a search bar. It works in every app, punctuates for you, and is dramatically faster than typing.</p>
@@ -215,7 +216,7 @@ New in version 4: tidied for wider sharing. Version 3 corrected the update advic
   <div class="card">
     <h4><span class="plat win">Windows</span> <span class="plat mac">macOS</span> Handy</h4>
     <p>Free and open source, no licence ever. The choice for all Windows PCs (10/11, Intel/AMD and ARM), and the free Mac alternative if your Mac is Intel, on an older macOS, or you simply do not want to pay.</p>
-    <p><a href="#win-handy">Windows: section 5 &rarr;</a> &middot; <a href="#mac-handy">Mac: section 4 &rarr;</a></p>
+    <p><a href="#win-handy">Windows: section 5 &rarr;</a> &middot; <a href="#mac-handy">Mac: section 4 &rarr;</a> &middot; <a href="windows.html">Full Windows guide &rarr;</a></p>
   </div>
 </div>
 
@@ -297,7 +298,7 @@ New in version 4: tidied for wider sharing. Version 3 corrected the update advic
 <p>Now jump to <a href="#test">section 6</a> and test it.</p>
 
 <h2 id="mac-handy"><span class="plat mac">macOS</span> 4. Handy on Mac (the free alternative)</h2>
-<p>Choose Handy if your Mac is Intel, on macOS older than 14.4, or you want a completely free option. Version covered: 0.9.6.</p>
+<p>Choose Handy if your Mac is Intel, on macOS older than 14.4, or you want a completely free option. Version covered: 0.9.7.</p>
 <ol class="steps">
   <li><span class="do">Check your chip: Apple menu &rarr; About This Mac.</span>
       <span class="why">"Chip: Apple M..." means Apple Silicon; "Processor: Intel..." means Intel.</span></li>
@@ -308,38 +309,40 @@ New in version 4: tidied for wider sharing. Version 3 corrected the update advic
       <span class="why">This warning means the app is not notarised through Apple's paid programme, not that it is harmful. Handy's code is public on GitHub. Only ever click past this warning for software you deliberately downloaded from its official site; see the <a href="#faq">FAQ</a>.</span></li>
   <li><span class="do">Grant the Microphone and Accessibility permissions when asked.</span>
       <span class="why">Same two permissions, same reasons as VoiceInk (section 3.2). Manual paths are identical, with Handy in place of VoiceInk.</span></li>
-  <li><span class="do">In Handy's settings, download the <strong>Parakeet V3</strong> model and select your microphone.</span></li>
+  <li><span class="do">When Handy asks you to choose a transcription model, pick <strong>Parakeet Unified EN</strong> (marked Recommended; English only), then select your microphone in its settings.</span></li>
   <li><span class="do">Note the shortcut (at the time of writing the default is hold <kbd>Ctrl</kbd>+<kbd>Space</kbd>; check in the app) and change it in Settings if it clashes with anything you use.</span></li>
 </ol>
 <p>Then test it in <a href="#test">section 6</a>.</p>
 
 <h2 id="win-handy"><span class="plat win">Windows</span> 5. Handy on Windows</h2>
-<p>Requirements: Windows 10 or 11. Works on ordinary Intel/AMD PCs (x64) and ARM laptops (separate download). Version covered: 0.9.6. Handy is free and open source; there is nothing to buy.</p>
+<p>Requirements: Windows 10 or 11. Works on ordinary Intel/AMD PCs (x64) and ARM laptops (separate download). Version covered: 0.9.7. Handy is free and open source; there is nothing to buy.</p>
+<div class="callout tip"><span class="label">More for Windows</span>
+<p>The <a href="windows.html">Windows guide</a> compares the private dictation options on Windows, walks through Handy in more detail, and adds optional AI clean-up of your text.</p></div>
 
 <h3>5.1 Download and install</h3>
 <ol class="steps">
   <li><span class="do">Go to <a href="https://handy.computer/download">handy.computer/download</a> and download the Windows <strong>Installer (.exe)</strong> for your system type: x64 for almost everyone, ARM if Settings &rarr; System &rarr; About says "ARM-based processor".</span>
       <span class="why">Comfortable with the command line? <code>winget install cjpais.Handy</code> does the same job.</span></li>
-  <li><span class="do">Run the installer. If a blue box appears saying "Windows protected your PC" (Microsoft Defender SmartScreen), click <strong>More info</strong>, then <strong>Run anyway</strong>.</span>
-      <span class="why">SmartScreen flags apps from small publishers it has not seen often; it is a reputation check, not a virus alert. Handy's code is public on GitHub. Only click past this for software you deliberately downloaded from its official site.</span></li>
+  <li><span class="do">Run the installer. If a blue box appears saying "Windows protected your PC" (Microsoft Defender SmartScreen), click <strong>More info</strong>, check that the publisher reads <strong>YNYNG LLC</strong>, then click <strong>Run anyway</strong>.</span>
+      <span class="why">Handy's installers are digitally signed under that company name. SmartScreen can still flag software it has not seen often; it is a reputation check, not a virus alert. If the publisher is different or unknown, stop and download the file again from handy.computer.</span></li>
   <li><span class="do">Follow the short install wizard and launch Handy. It lives in the system tray (the little icons near the clock).</span></li>
 </ol>
 
 <h3>5.2 Microphone permission and setup</h3>
 <ol class="steps">
-  <li><span class="do">Check Windows allows apps to use the microphone: Settings &rarr; Privacy &amp; security &rarr; <strong>Microphone</strong>. Switch on "Microphone access" and "Let desktop apps access your microphone".</span>
+  <li><span class="do">Check Windows allows apps to use the microphone: Settings &rarr; Privacy &amp; security &rarr; <strong>Microphone</strong>. Switch on "Microphone access", "Let apps access your microphone" and "Let desktop apps access your microphone".</span>
       <span class="why">If this is off, Handy hears nothing and fails silently. It is the number one Windows gotcha.</span></li>
   <li><span class="do">In Handy's settings (right-click the tray icon), choose your microphone.</span></li>
-  <li><span class="do">Download the <strong>Parakeet V3</strong> model when Handy offers it.</span>
-      <span class="why">Parakeet V3 runs on the CPU, needs no special graphics card, and auto-detects language. It is the right default. (Whisper models are also available and can use a GPU; see <a href="#extras">section 8</a>.)</span></li>
+  <li><span class="do">When Handy asks you to choose a transcription model, pick <strong>Parakeet Unified EN</strong> (marked Recommended).</span>
+      <span class="why">It is English only and runs well on an ordinary processor, with no special graphics card. Dictating in other languages? Choose Nemotron Streaming 3.5, or Parakeet V3 through <strong>Show all models</strong>. (Whisper models are also available and can use a GPU; see <a href="#extras">section 8</a>.)</span></li>
 </ol>
 
 <h3>5.3 The shortcut</h3>
 <ol class="steps">
-  <li><span class="do">Learn the default: hold <kbd>Ctrl</kbd>+<kbd>Space</kbd>, speak, release (verify the default in the app's settings; this was correct at the time of writing).</span>
+  <li><span class="do">Learn the default: hold <kbd>Ctrl</kbd>+<kbd>Space</kbd>, speak, release.</span>
       <span class="why">Handy supports both hold-to-talk and a toggle mode; hold-to-talk is the habit to build, because the mic is only live while your finger says so.</span></li>
   <li><span class="do">If Ctrl+Space clashes with an app you use (some IDEs and IMEs use it), change the binding in Handy's settings.</span></li>
-  <li><span class="do">Enable "start with Windows" in Handy's settings if offered (check in the app), so it is always ready.</span></li>
+  <li><span class="do">Switch on <strong>Launch on Startup</strong> in Handy's Advanced settings, so it is always ready.</span></li>
 </ol>
 
 <h2 id="test">6. Test it</h2>
@@ -441,7 +444,7 @@ Output: I think we should move the meeting because the report isn't ready.</code
   <tr><td><strong>App seems to have vanished</strong> (no window)</td>
       <td>These apps live in the menu bar (Mac, top right) or system tray (Windows, near the clock, possibly behind the ^ overflow arrow). Click the little icon.</td></tr>
   <tr><td><strong>Gatekeeper or SmartScreen blocked the install</strong></td>
-      <td>Mac: System Settings &rarr; Privacy &amp; Security &rarr; scroll down &rarr; <strong>Open Anyway</strong>. Windows: <strong>More info &rarr; Run anyway</strong> on the SmartScreen box. Only do this for apps you downloaded from the official sites in this guide.</td></tr>
+      <td>Mac: System Settings &rarr; Privacy &amp; Security &rarr; scroll down &rarr; <strong>Open Anyway</strong>. Windows: on the SmartScreen box, click <strong>More info</strong>, check the publisher (for Handy, <strong>YNYNG LLC</strong>), then <strong>Run anyway</strong>. Only do this for apps you downloaded from the official sites in this guide.</td></tr>
   <tr><td><span class="plat mac">macOS</span> <strong>"VoiceInk is damaged and can't be opened"</strong></td>
       <td>A corrupted download or an over-eager quarantine flag. Delete the app, re-download from the official site, reinstall. If it persists on a fresh download, run <code>xattr -cr /Applications/VoiceInk.app</code> in Terminal (same for Handy with its path).</td></tr>
   <tr><td><strong>Permissions reset after an update</strong></td>
@@ -518,11 +521,11 @@ Output: I think we should move the meeting because the report isn't ready.</code
     <tr><td>Cost</td><td>Free, open source</td></tr>
     <tr><td>Hotkey</td><td>Hold <kbd>Ctrl</kbd>+<kbd>Space</kbd> by default (check in app); rebind in Settings</td></tr>
     <tr><td>Permissions</td><td>Windows: Settings &rarr; Privacy &amp; security &rarr; Microphone. Mac: Microphone + Accessibility.</td></tr>
-    <tr><td>Model</td><td>Parakeet V3 (CPU-friendly), offered on first run</td></tr>
+    <tr><td>Model</td><td>Parakeet Unified EN (English; marked Recommended), chosen on first run</td></tr>
     <tr><td>Uninstall</td><td>Windows: Settings &rarr; Apps, then delete <code>%APPDATA%\com.pais.handy</code>. Mac: app + <code>~/Library/Application Support/com.pais.handy</code>.</td></tr>
   </table>
 </div>
-<p>Written Wed, 17 Sep 2026 against VoiceInk 2.13 and Handy 0.9.6. Details marked "check in the app" may have moved in later versions. Update advice for self-built VoiceInk (sections 9, 10 and 15) revised Tue, 29 Sep 2026 against VoiceInk 2.21 built from source.</p>
+<p>Written Wed, 17 Sep 2026 against VoiceInk 2.13 and Handy 0.9.6; Handy details updated to 0.9.7 on Tue, 29 Sep 2026. Details marked "check in the app" may have moved in later versions. Update advice for self-built VoiceInk (sections 9, 10 and 15) revised Tue, 29 Sep 2026 against VoiceInk 2.21 built from source.</p>
 
 <h2 id="build-yourself"><span class="plat mac">macOS</span> 15. For tinkerers: build VoiceInk yourself, free</h2>
 <p>VoiceInk's source code is public under an open-source licence (GPLv3), and building it yourself is free and entirely legitimate: the developer publishes the instructions. This is the only route that is both free <em>and</em> VoiceInk. It is genuinely a developer-tools exercise, so it lives here at the back rather than in the main flow.</p>

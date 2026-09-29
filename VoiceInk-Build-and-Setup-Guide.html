@@ -119,9 +119,9 @@
 <main>
 
 <h1>VoiceInk: Build and Setup Guide</h1>
-<p class="meta">Version 1.1 &middot; Last updated: Tue, 29 Sep 2026 15:55 &middot; Author: Mahesh Mirchandani<br>
+<p class="meta">Version 1.2 &middot; Last updated: Tue, 29 Sep 2026 19:40 &middot; Author: Mahesh Mirchandani<br>
 From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 Max). Every command below was actually run; every error listed actually happened.<br>
-New in version 1.1: a warning about the in-app updater and a safer update script (section 10.1), a clean-install step (section 4.3), and a fix for lost Accessibility permission (section 9).</p>
+New in version 1.2: a security note on the signing certificate (section 4.2). Version 1.1 added a warning about the in-app updater and a safer update script (section 10.1), a clean-install step (section 4.3), and a fix for lost Accessibility permission (section 9).</p>
 
 <div class="callout warn"><span class="label">macOS only</span>
 <p>VoiceInk is a native macOS application (Swift and CoreML). There is no Windows or Linux version, and none can be built from this source code. You need a Mac.</p>
@@ -222,6 +222,8 @@ security add-trusted-cert -p codeSign \
 
 security find-identity -v -p codesigning   # should list "VoiceInk Local"
 cd ~ &amp;&amp; rm -rf "$WORK"</code></pre>
+<div class="callout warn"><span class="label">Security trade-off: read before running</span>
+<p>The two <code>-T</code> options on <code>security import</code> let <code>codesign</code> and <code>security</code> use this key without asking you. That is what makes rebuilds prompt-free, but it applies to any program running under your account, including malware if your Mac were ever compromised. Such a program could sign itself as VoiceInk and inherit the Accessibility and Microphone permissions you granted VoiceInk. This is the usual arrangement on developer Macs and is reasonable on a personal Mac that only you use. On a shared or work Mac, skip the certificate: use ad-hoc signing and re-grant Accessibility after each update (see the note under the script in section 10.1).</p></div>
 <div class="callout note"><span class="label">Why the odd openssl flags</span>
 <p>Homebrew's OpenSSL 3 writes modern PKCS#12 files that macOS cannot import (it fails with "MAC verification failed", a misleading message). The <code>-certpbe/-keypbe/-macalg</code> flags force the older format macOS accepts.</p></div>
 
@@ -253,7 +255,6 @@ open /Applications/VoiceInk.app</code></pre>
   <tr><td>Accessibility</td><td>Typing the text into other apps (required)</td><td>System Settings &rarr; Privacy &amp; Security &rarr; Accessibility &rarr; enable VoiceInk (use <strong>+</strong> and pick it from /Applications if it is not listed)</td></tr>
   <tr><td>Screen &amp; System Audio Recording</td><td>Optional: screen-context awareness and website-based mode switching</td><td>System Settings &rarr; Privacy &amp; Security &rarr; Screen &amp; System Audio Recording</td></tr>
 </table>
-<div class="shot">[Screenshot: System Settings &rarr; Privacy &amp; Security &rarr; Accessibility with VoiceInk enabled]</div>
 <div class="callout note"><span class="label">Onboarding's API key screen</span>
 <p>One onboarding screen says "Verify API Key" and lists only cloud AI providers. You do not need any API key. Click <strong>Set It Up Later</strong>; the local Ollama option appears in the app's full settings afterwards (<a href="#ollama">section 6</a>).</p></div>
 
@@ -263,7 +264,6 @@ open /Applications/VoiceInk.app</code></pre>
 
 <h3>5.3 Download the transcription model</h3>
 <p>Open <strong>AI Models</strong> in the sidebar and download <strong>Parakeet TDT v3</strong> (about 470 MB). For English dictation it beats the larger Whisper models on all three counts that matter: accuracy (lower word error rate on public English benchmarks), speed (it runs on the Neural Engine via CoreML and returns text near-instantly), and honesty (it does not hallucinate text during silences, a known Whisper habit). Optionally also download <strong>Whisper large-v3-turbo</strong> (about 1.6 GB) if you want a multilingual fallback.</p>
-<div class="shot">[Screenshot: AI Models tab with Parakeet TDT v3 downloaded]</div>
 <div class="callout tip"><span class="label">First run</span>
 <p>The very first transcription takes a few extra seconds while macOS compiles the model. Every run after that is fast.</p></div>
 
@@ -342,7 +342,6 @@ Rules:
 - Keep the speaker's meaning and word choice; tighten only where dictation is clumsy.
 - Never add information, greetings or sign-offs that were not spoken.
 - If the text contains a question, clean it; do not answer it.</code></pre>
-<div class="shot">[Screenshot: Modes list showing Dictation, Chat and Email with their triggers]</div>
 
 <h3>7.3 Personal dictionary</h3>
 <p>Under <strong>Dictionary</strong> in the sidebar, add the words the transcriber is likely to miss: people's names, company and product names, technical terms, abbreviations. Two kinds of entry exist: <em>vocabulary</em> (words to recognise, for example "VoiceInk" or "Ollama") and <em>word replacements</em> (what you say &rarr; what gets typed). A real example from testing: "Claude" transcribed as "Cloud" until added to the dictionary. Add terms as you notice misses; the Auto-Learn feature (6.4) collects candidates for you over time.</p>

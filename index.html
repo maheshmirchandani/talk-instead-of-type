@@ -195,9 +195,9 @@
 <main>
 
 <h1>Talk Instead of Type</h1>
-<p class="meta">Private voice dictation on Mac and Windows &middot; Version 3 &middot; Last updated: Tue, 29 Sep 2026 15:55<br>
+<p class="meta">Private voice dictation on Mac and Windows &middot; Version 4 &middot; Last updated: Tue, 29 Sep 2026 19:40<br>
 Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.6 (Windows and Mac)<br>
-New in version 3: corrected update advice for anyone who built VoiceInk themselves (sections 9, 10 and 15).</p>
+New in version 4: tidied for wider sharing. Version 3 corrected the update advice for anyone who built VoiceInk themselves (sections 9, 10 and 15).</p>
 
 <h2 id="start">1. Start here</h2>
 <p>This guide sets you up with voice dictation that runs <em>entirely on your own computer</em>. You hold a key, speak, release the key, and your words appear as text wherever your cursor is: an email, a chat box, a document, a search bar. It works in every app, punctuates for you, and is dramatically faster than typing.</p>
@@ -270,7 +270,6 @@ New in version 3: corrected update advice for anyone who built VoiceInk themselv
   <li><span class="do">On the setup screen titled "Verify API Key", click <strong>Set It Up Later</strong>.</span>
       <span class="why">That screen is for the optional cloud AI clean-up. You do not need any API key for dictation.</span></li>
 </ol>
-<div class="shot">[Screenshot: System Settings &rarr; Privacy &amp; Security &rarr; Accessibility with VoiceInk toggled on]</div>
 
 <h3>3.3 Microphone and model</h3>
 <ol class="steps">
@@ -325,7 +324,6 @@ New in version 3: corrected update advice for anyone who built VoiceInk themselv
       <span class="why">SmartScreen flags apps from small publishers it has not seen often; it is a reputation check, not a virus alert. Handy's code is public on GitHub. Only click past this for software you deliberately downloaded from its official site.</span></li>
   <li><span class="do">Follow the short install wizard and launch Handy. It lives in the system tray (the little icons near the clock).</span></li>
 </ol>
-<div class="shot">[Screenshot: SmartScreen dialog with "More info" and "Run anyway" highlighted]</div>
 
 <h3>5.2 Microphone permission and setup</h3>
 <ol class="steps">
@@ -549,12 +547,12 @@ defaults write com.prakashjoshipax.VoiceInk VoiceInkChecksForUpdatesOnLaunch -bo
 <p>macOS ties the Accessibility permission to the app's signature, and home-built apps get a new signature on every rebuild, so after each update you re-grant Accessibility. There is a tidy fix (a one-off self-signed certificate), covered in the companion build guide below.</p></div>
 <div class="callout warn"><span class="label">Never accept an update offered inside the app</span>
 <p>A home-built VoiceInk still contains the developer's updater. If you accept an update from its <strong>update available</strong> button or from <strong>Check for Updates&hellip;</strong>, it replaces your build with the official paid version. That version has a different signature, so macOS stops honouring your permissions and dictation stops working, with the message that accessibility permissions are not provided. The command above turns the update check off; the update script in the companion guide keeps it off, and its troubleshooting section covers recovery if it has already happened.</p></div>
-<p><strong>The full walkthrough</strong>, with every command, every error met along the way and its fix, the certificate trick, and an update script, lives in a companion document: <a href="VoiceInk-Build-and-Setup-Guide.html">VoiceInk: Build and Setup Guide</a> (published alongside this file; if the link does not resolve, ask me for it). The official upstream instructions are in <a href="https://github.com/Beingpax/VoiceInk/blob/main/BUILDING.md">BUILDING.md on GitHub</a>.</p>
+<p><strong>The full walkthrough</strong>, with every command, every error met along the way and its fix, the certificate trick, and an update script, lives in a companion document: <a href="VoiceInk-Build-and-Setup-Guide.html">VoiceInk: Build and Setup Guide</a> (published alongside this file). The official upstream instructions are in <a href="https://github.com/Beingpax/VoiceInk/blob/main/BUILDING.md">BUILDING.md on GitHub</a>.</p>
 
 </main>
 
 <footer>
-<p><strong>About this guide.</strong> Put together by Mahesh, from setting this up on my own machines. If you get stuck anywhere, message me and mention which numbered step you are on; that makes it easy to help.</p>
+<p><strong>About this guide.</strong> Put together by Mahesh, from setting this up on my own machines.</p>
 </footer>
 
 <script>

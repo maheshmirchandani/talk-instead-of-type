@@ -119,8 +119,9 @@
 <main>
 
 <h1>VoiceInk: Build and Setup Guide</h1>
-<p class="meta">Version 1.0 &middot; Last updated: Wed, 17 Sep 2026 &middot; Author: Mahesh Mirchandani<br>
-From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 Max). Every command below was actually run; every error listed actually happened.</p>
+<p class="meta">Version 1.1 &middot; Last updated: Tue, 29 Sep 2026 15:55 &middot; Author: Mahesh Mirchandani<br>
+From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 Max). Every command below was actually run; every error listed actually happened.<br>
+New in version 1.1: a warning about the in-app updater and a safer update script (section 10.1), a clean-install step (section 4.3), and a fix for lost Accessibility permission (section 9).</p>
 
 <div class="callout warn"><span class="label">macOS only</span>
 <p>VoiceInk is a native macOS application (Swift and CoreML). There is no Windows or Linux version, and none can be built from this source code. You need a Mac.</p>
@@ -130,7 +131,7 @@ From a real build performed on Mon, 15 Sep 2026 on a MacBook Pro 16&Prime; (M1 M
 <p>VoiceInk is a dictation app for macOS. You hold a key, speak, release, and your words appear as text at the cursor in whatever app you are using. Transcription runs entirely on your Mac using local AI models, so nothing you say leaves the machine. An optional second stage passes the transcript through a local language model (via Ollama) to strip filler words and fix punctuation, still fully offline.</p>
 <p>The app is open source under the GPLv3 licence (<a href="https://github.com/Beingpax/VoiceInk">github.com/Beingpax/VoiceInk</a>). The developer sells a compiled version with a licence; building from source is free and entirely legal. What you give up by building it yourself:</p>
 <ul>
-  <li><strong>Automatic updates.</strong> The Sparkle updater is disabled in local builds. You update by rebuilding (a one-command script is provided in <a href="#updating">section 10</a>).</li>
+  <li><strong>Automatic updates.</strong> Local builds still contain the developer's updater (Sparkle), but accepting an update it offers replaces your build with the official one and breaks dictation (see the warning in <a href="#updating">section 10</a>). You turn the update check off and update by rebuilding instead; a one-command script that does both is provided in section 10.</li>
   <li><strong>iCloud dictionary sync.</strong> Your personal dictionary stays on one Mac.</li>
   <li><strong>Support.</strong> No priority support or Discord access, and you are not funding further development. If you end up using VoiceInk daily, consider buying a licence anyway.</li>
 </ul>
@@ -232,8 +233,15 @@ codesign --verify --deep --strict ~/Downloads/VoiceInk.app   # silence means suc
 
 rm -rf /Applications/VoiceInk.app
 ditto ~/Downloads/VoiceInk.app /Applications/VoiceInk.app
-open -a VoiceInk</code></pre>
-<p>If you skipped the certificate, just run the last three lines. The app should launch and show its onboarding window.</p>
+
+# Keep only the copy in /Applications, and turn off the in-app update check
+rm -rf ~/Downloads/VoiceInk.app ~/Developer/voiceink-build/VoiceInk/.local-build
+defaults write com.prakashjoshipax.VoiceInk VoiceInkChecksForUpdatesOnLaunch -bool false
+
+open /Applications/VoiceInk.app</code></pre>
+<p>If you skipped the certificate, leave out the two <code>codesign</code> lines. The app should launch and show its onboarding window.</p>
+<div class="callout note"><span class="label">Why delete the other copies</span>
+<p>The build leaves two more copies of the app, one in <code>~/Downloads</code> and one inside the build folder, and macOS knows about all of them. If one of those is launched, or is the copy that turns on <strong>Launch at login</strong>, permissions and updates attach to the wrong app. A single copy in /Applications avoids that. The update check is explained in <a href="#updating">section 10.1</a>.</p></div>
 
 <h2 id="firstrun">5. First-run setup</h2>
 
@@ -264,7 +272,7 @@ open -a VoiceInk</code></pre>
 <p>Set <strong>Language</strong> to <strong>English</strong> in the mode's Transcription section (rather than Auto-detect) if you dictate only in English.</p>
 
 <h3>5.5 Launch at login</h3>
-<p>In VoiceInk's <strong>Settings</strong>, enable <strong>Launch at login</strong>, so dictation is always one key-hold away.</p>
+<p>In VoiceInk's <strong>Settings</strong>, enable <strong>Launch at login</strong>, so dictation is always one key-hold away. macOS remembers which copy of the app turned this on, which is another reason to keep only the copy in /Applications (section 4.3).</p>
 
 <h3>5.6 Test it</h3>
 <p>Open TextEdit, click into the document, hold the hotkey and say a sentence. The exact words should appear at the cursor. Repeat once in a browser text field. If nothing appears, the Accessibility permission is the usual culprit (<a href="#troubleshooting">section 9</a>).</p>
@@ -355,7 +363,7 @@ Rules:
   <tr><th>Symptom</th><th>Cause and fix</th></tr>
   <tr>
     <td><code>error: cannot execute tool 'metal' due to missing Metal Toolchain</code>, five <code>CompileMetalFile</code> failures in mlx-swift</td>
-    <td>Xcode 26 ships without the Metal compiler. Run <code>xcodebuild -downloadComponent MetalToolchain</code>, verify with <code>xcrun metal --version</code>, rebuild. (Section 3.2 avoids this by installing it up front.)</td>
+    <td>Xcode 26 and later ship without the Metal compiler, and each Xcode upgrade needs it again. Run <code>xcodebuild -downloadComponent MetalToolchain</code>, verify with <code>xcrun metal --version</code>, rebuild. (Section 3.2 avoids this by installing it up front.)</td>
   </tr>
   <tr>
     <td><code>security: SecKeychainItemImport: MAC verification failed during PKCS12 import (wrong password?)</code></td>
@@ -401,23 +409,54 @@ Rules:
     <td>First dictation after setup is slow</td>
     <td>One-off CoreML model compilation. Subsequent runs are fast.</td>
   </tr>
+  <tr>
+    <td>Dictation stopped working after an update; VoiceInk says accessibility permissions are not provided</td>
+    <td>An update accepted inside the app replaced your build with the official one (section 10.1), and macOS no longer matches your permission to it. Run the update script in section 10.1, which rebuilds, reinstalls and removes the stray copies. Then clear the stale entry with <code>tccutil reset Accessibility com.prakashjoshipax.VoiceInk</code>, open VoiceInk, switch it on under System Settings &rarr; Privacy &amp; Security &rarr; Accessibility, and quit and reopen VoiceInk. Settings, modes and history survive.</td>
+  </tr>
 </table>
 
 <h2 id="updating">10. Updating and uninstalling</h2>
 
 <h3>10.1 Updating</h3>
-<p>Local builds have no auto-updater. Save this as <code>~/Developer/voiceink-build/rebuild.sh</code>, make it executable once with <code>chmod +x rebuild.sh</code>, and run it whenever you want the latest version. Settings, modes, prompts and models all survive updates.</p>
+<div class="callout warn"><span class="label">Never accept an update offered inside the app</span>
+<p>Local builds still contain the developer's updater (Sparkle). If you accept an update from the Dashboard's update button or from <strong>Check for Updates&hellip;</strong>, it replaces your build with the official version. That version has a different signature, so macOS stops honouring your Accessibility and Microphone permissions, and dictation stops working with the message that accessibility permissions are not provided. This happened on the machine this guide is based on; the recovery steps are in <a href="#troubleshooting">section 9</a>.</p></div>
+<p>Update by rebuilding instead. Save the script below as <code>~/Developer/voiceink-build/rebuild.sh</code>, make it executable once with <code>chmod +x rebuild.sh</code>, and run it whenever you want the latest version. As well as rebuilding, it reinstalls the Metal Toolchain if an Xcode upgrade removed it, turns the in-app update check off, removes the extra copies of the app the build leaves behind, and checks that <strong>Launch at login</strong> opens the copy in /Applications. Settings, modes, prompts and models all survive updates.</p>
 <pre><code>#!/bin/zsh
 # Pull the latest VoiceInk source, rebuild, re-sign and reinstall.
+# Also: reinstalls the Metal Toolchain after an Xcode upgrade, turns off
+# the in-app update check (never accept those updates; see section 10.1),
+# removes the extra copies of the app the build leaves behind, and checks
+# that "Launch at login" opens the copy in /Applications.
+
 set -euo pipefail
 
 REPO="$HOME/Developer/voiceink-build/VoiceInk"
 IDENTITY="VoiceInk Local"
+BUNDLE_ID="com.prakashjoshipax.VoiceInk"
+BUILT="$HOME/Downloads/VoiceInk.app"
+DEST="/Applications/VoiceInk.app"
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+
+quit_voiceink() {
+  pgrep -x VoiceInk &gt;/dev/null || return 0
+  osascript -e "tell application id \"$BUNDLE_ID\" to quit" 2&gt;/dev/null || true
+  for i in {1..15}; do
+    pgrep -x VoiceInk &gt;/dev/null || return 0
+    sleep 1
+  done
+  echo "ERROR: VoiceInk did not quit. Quit it manually and re-run." &gt;&amp;2
+  exit 1
+}
 
 echo "==&gt; Updating source..."
 cd "$REPO"
 git pull --ff-only
 echo "    now at: $(git log -1 --format='%h %ci %s')"
+
+echo "==&gt; Checking Metal Toolchain (each Xcode major version needs its own)..."
+if xcodebuild -showComponent MetalToolchain 2&gt;&amp;1 | grep -q 'Status: uninstalled'; then
+  xcodebuild -downloadComponent MetalToolchain
+fi
 
 echo "==&gt; Building (make local)..."
 make local LOCAL_CODESIGN_IDENTITY=-
@@ -425,19 +464,50 @@ make local LOCAL_CODESIGN_IDENTITY=-
 echo "==&gt; Re-signing with '$IDENTITY'..."
 if ! security find-identity -v -p codesigning | grep -q "$IDENTITY"; then
   echo "ERROR: signing identity '$IDENTITY' not found in keychain." &gt;&amp;2
+  echo "Create it first: section 4.2 of the VoiceInk Build and Setup Guide." &gt;&amp;2
   exit 1
 fi
-codesign -f --deep --preserve-metadata=entitlements -s "$IDENTITY" "$HOME/Downloads/VoiceInk.app"
-codesign --verify --deep --strict "$HOME/Downloads/VoiceInk.app"
+codesign -f --deep --preserve-metadata=entitlements -s "$IDENTITY" "$BUILT"
+codesign --verify --deep --strict "$BUILT"
 
 echo "==&gt; Installing to /Applications..."
-osascript -e 'quit app "VoiceInk"' 2&gt;/dev/null || true
-sleep 2
-rm -rf /Applications/VoiceInk.app
-ditto "$HOME/Downloads/VoiceInk.app" /Applications/VoiceInk.app
+quit_voiceink
+defaults write "$BUNDLE_ID" VoiceInkChecksForUpdatesOnLaunch -bool false
+rm -rf "$DEST"
+ditto "$BUILT" "$DEST"
+codesign --verify --deep --strict "$DEST"
+echo "    version:   $(defaults read "$DEST/Contents/Info.plist" CFBundleShortVersionString)"
+echo "    signature: $(codesign -dvv "$DEST" 2&gt;&amp;1 | grep '^Authority' | head -1)"
+
+echo "==&gt; Removing other copies..."
+rm -rf "$BUILT" "$REPO/.local-build"
+# Sparkle's download and install staging area (can hold an official build).
+rm -rf "$HOME/Library/Caches/$BUNDLE_ID/org.sparkle-project.Sparkle"
+# Xcode registers the build product with LaunchServices on every build.
+# Unregister every VoiceInk path outside /Applications; `lsregister -u`
+# only drops a record once its path no longer exists, hence after the rm.
+"$LSREGISTER" -dump 2&gt;/dev/null \
+  | sed -n 's/^path: *\(.*VoiceInk.*\.app\) (0x[0-9a-f]*)$/\1/p' | sort -u \
+  | while IFS= read -r p; do
+      [[ "$p" == "$DEST"* ]] || "$LSREGISTER" -u "$p" 2&gt;/dev/null || true
+    done || true
+"$LSREGISTER" -f "$DEST"
 
 echo "==&gt; Relaunching..."
-open -a VoiceInk
+open "$DEST"
+
+echo "==&gt; Checking login item..."
+LOGIN_URL=$(sfltool dumpbtm 2&gt;/dev/null | awk -v id="2.$BUNDLE_ID" \
+  '$1=="Identifier:" &amp;&amp; $2==id {f=1; next}
+   f &amp;&amp; $1=="URL:" &amp;&amp; !done {print $2; done=1}') || true
+if [[ "$LOGIN_URL" == "file://$DEST/" ]]; then
+  echo "    OK: login item opens $DEST"
+elif [[ -z "$LOGIN_URL" ]]; then
+  echo "    NOTE: no login item. Turn on 'Launch at login' in VoiceInk settings if wanted."
+else
+  echo "    WARNING: login item opens $LOGIN_URL"
+  echo "    Fix: in VoiceInk settings, turn 'Launch at login' off, then on again."
+fi
 echo "Done. VoiceInk updated, re-signed and running."</code></pre>
 <p>If you chose ad-hoc signing instead of the certificate, delete the re-signing block and expect to re-grant Accessibility after each update.</p>
 
@@ -453,7 +523,7 @@ echo "Done. VoiceInk updated, re-signed and running."</code></pre>
 </ol>
 
 <h2 id="appendix">11. Appendix: versions used</h2>
-<p>This guide documents a build performed on Mon, 15 Sep 2026, with setup completed on Wed, 17 Sep 2026.</p>
+<p>This guide documents a build performed on Mon, 15 Sep 2026, with setup completed on Wed, 17 Sep 2026. Version 1.1 changes follow a rebuild on Tue, 29 Sep 2026 with Xcode 27.0 (27A266a) and VoiceInk 2.21 (source commit <code>7fdc5c3</code>).</p>
 <table>
   <tr><th>Component</th><th>Version</th></tr>
   <tr><td>Hardware</td><td>MacBook Pro 16&Prime; (2021), Apple M1 Max, 32 GB RAM</td></tr>

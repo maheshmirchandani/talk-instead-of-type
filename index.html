@@ -195,8 +195,9 @@
 <main>
 
 <h1>Talk Instead of Type</h1>
-<p class="meta">Private voice dictation on Mac and Windows &middot; Version 2 &middot; Last updated: Wed, 17 Sep 2026<br>
-Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.6 (Windows and Mac)</p>
+<p class="meta">Private voice dictation on Mac and Windows &middot; Version 3 &middot; Last updated: Tue, 29 Sep 2026 15:55<br>
+Versions covered: VoiceInk 2.13 (Mac) and Handy 0.9.6 (Windows and Mac)<br>
+New in version 3: corrected update advice for anyone who built VoiceInk themselves (sections 9, 10 and 15).</p>
 
 <h2 id="start">1. Start here</h2>
 <p>This guide sets you up with voice dictation that runs <em>entirely on your own computer</em>. You hold a key, speak, release the key, and your words appear as text wherever your cursor is: an email, a chat box, a document, a search bar. It works in every app, punctuates for you, and is dramatically faster than typing.</p>
@@ -446,12 +447,13 @@ Output: I think we should move the meeting because the report isn't ready.</code
   <tr><td><span class="plat mac">macOS</span> <strong>"VoiceInk is damaged and can't be opened"</strong></td>
       <td>A corrupted download or an over-eager quarantine flag. Delete the app, re-download from the official site, reinstall. If it persists on a fresh download, run <code>xattr -cr /Applications/VoiceInk.app</code> in Terminal (same for Handy with its path).</td></tr>
   <tr><td><strong>Permissions reset after an update</strong></td>
-      <td>macOS ties permissions to the app's signature, and some updates look like a new app. Re-grant in System Settings &rarr; Privacy &amp; Security (remove the old entry first if the toggle seems on but does nothing).</td></tr>
+      <td>macOS ties permissions to the app's signature, and some updates look like a new app. Re-grant in System Settings &rarr; Privacy &amp; Security (remove the old entry first if the toggle seems on but does nothing). If VoiceInk still says <em>accessibility permissions are not provided</em>, clear its entry in Terminal with <code>tccutil reset Accessibility com.prakashjoshipax.VoiceInk</code>, switch it on again, then quit and reopen VoiceInk. Built it yourself and accepted an in-app update? See <a href="#build-yourself">section 15</a> first.</td></tr>
 </table>
 
 <h2 id="updating">10. Updating</h2>
 <ul>
   <li><span class="plat mac">macOS</span> <strong>VoiceInk</strong> checks for updates itself and offers them in-app (Sparkle updater). Accept, it swaps itself over, done. Settings and licence survive.</li>
+  <li><span class="plat mac">macOS</span> <strong>Built VoiceInk yourself?</strong> The opposite applies: never accept an update offered inside the app. It replaces your build with the developer's official one, and dictation stops working until you rebuild. Update by re-running the build instead; see <a href="#build-yourself">section 15</a>.</li>
   <li><strong>Handy</strong> updates in-app (it will offer new versions), and you can always install a newer version straight over the old one from <a href="https://handy.computer/download">handy.computer/download</a>. Settings and models survive.</li>
   <li>After any update, do one quick test dictation. If text stops appearing, it is the permissions-reset case in <a href="#trouble">troubleshooting</a>.</li>
 </ul>
@@ -522,12 +524,12 @@ Output: I think we should move the meeting because the report isn't ready.</code
     <tr><td>Uninstall</td><td>Windows: Settings &rarr; Apps, then delete <code>%APPDATA%\com.pais.handy</code>. Mac: app + <code>~/Library/Application Support/com.pais.handy</code>.</td></tr>
   </table>
 </div>
-<p>Written Wed, 17 Sep 2026 against VoiceInk 2.13 and Handy 0.9.6. Details marked "check in the app" may have moved in later versions.</p>
+<p>Written Wed, 17 Sep 2026 against VoiceInk 2.13 and Handy 0.9.6. Details marked "check in the app" may have moved in later versions. Update advice for self-built VoiceInk (sections 9, 10 and 15) revised Tue, 29 Sep 2026 against VoiceInk 2.21 built from source.</p>
 
 <h2 id="build-yourself"><span class="plat mac">macOS</span> 15. For tinkerers: build VoiceInk yourself, free</h2>
 <p>VoiceInk's source code is public under an open-source licence (GPLv3), and building it yourself is free and entirely legitimate: the developer publishes the instructions. This is the only route that is both free <em>and</em> VoiceInk. It is genuinely a developer-tools exercise, so it lives here at the back rather than in the main flow.</p>
 <p><strong>Is it for you?</strong> Only if you are comfortable typing commands in Terminal and can spare the setup: Xcode (Apple's free developer app, a very large download of tens of gigabytes), about 5 GB of working disk on top, and roughly 45 minutes the first time.</p>
-<p><strong>What you give up versus the paid build:</strong> no automatic updates (you re-run the build to update), no iCloud dictionary sync, no support, and first launch involves developer-style permission wrangling. Everything else in this guide works identically.</p>
+<p><strong>What you give up versus the paid build:</strong> no automatic updates (you re-run the build to update, and must never accept the update the app itself offers; see the warning below), no iCloud dictionary sync, no support, and first launch involves developer-style permission wrangling. Everything else in this guide works identically.</p>
 <p><strong>The shape of it</strong> (the door, not the full tour):</p>
 <pre><code># One-off preparation
 #   1. Install Xcode from the Mac App Store, open it once, accept the licence
@@ -539,9 +541,14 @@ mkdir -p ~/Developer/voiceink-build &amp;&amp; cd ~/Developer/voiceink-build
 git clone https://github.com/Beingpax/VoiceInk.git
 cd VoiceInk
 make local
-# ~20 minutes later the app appears in ~/Downloads; drag it to Applications</code></pre>
+# ~20 minutes later the app appears in ~/Downloads; drag it to Applications
+
+# Before opening it, turn off the in-app update check (see the warning below)
+defaults write com.prakashjoshipax.VoiceInk VoiceInkChecksForUpdatesOnLaunch -bool false</code></pre>
 <div class="callout warn"><span class="label">One caveat to know upfront</span>
 <p>macOS ties the Accessibility permission to the app's signature, and home-built apps get a new signature on every rebuild, so after each update you re-grant Accessibility. There is a tidy fix (a one-off self-signed certificate), covered in the companion build guide below.</p></div>
+<div class="callout warn"><span class="label">Never accept an update offered inside the app</span>
+<p>A home-built VoiceInk still contains the developer's updater. If you accept an update from its <strong>update available</strong> button or from <strong>Check for Updates&hellip;</strong>, it replaces your build with the official paid version. That version has a different signature, so macOS stops honouring your permissions and dictation stops working, with the message that accessibility permissions are not provided. The command above turns the update check off; the update script in the companion guide keeps it off, and its troubleshooting section covers recovery if it has already happened.</p></div>
 <p><strong>The full walkthrough</strong>, with every command, every error met along the way and its fix, the certificate trick, and an update script, lives in a companion document: <a href="VoiceInk-Build-and-Setup-Guide.html">VoiceInk: Build and Setup Guide</a> (published alongside this file; if the link does not resolve, ask me for it). The official upstream instructions are in <a href="https://github.com/Beingpax/VoiceInk/blob/main/BUILDING.md">BUILDING.md on GitHub</a>.</p>
 
 </main>
